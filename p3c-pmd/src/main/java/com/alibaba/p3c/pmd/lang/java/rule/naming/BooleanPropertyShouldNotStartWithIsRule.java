@@ -20,7 +20,7 @@ import com.alibaba.p3c.pmd.lang.AbstractXpathRule;
 import com.alibaba.p3c.pmd.lang.java.util.ViolationUtils;
 
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclaratorId;
+import net.sourceforge.pmd.lang.java.ast.ASTVariableId;
 
 /**
  * [Mandatory] Do not add 'is' as prefix while defining Boolean variable, since it may cause a serialization exception
@@ -41,7 +41,7 @@ public class BooleanPropertyShouldNotStartWithIsRule extends AbstractXpathRule {
 
     @Override
     public void addViolation(Object data, Node node, String arg) {
-        if (node instanceof ASTVariableDeclaratorId) {
+        if (node instanceof ASTVariableId) {
             ViolationUtils.addViolationWithPrecisePosition(this, node, data,
                 I18nResources.getMessage("java.naming.BooleanPropertyShouldNotStartWithIsRule.violation.msg",
                     node.getImage()));
