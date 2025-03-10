@@ -17,6 +17,7 @@ package com.alibaba.p3c.pmd.lang.java.util;
 
 import java.util.List;
 
+import net.sourceforge.pmd.lang.ast.NodeStream;
 import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
 import net.sourceforge.pmd.lang.java.ast.ASTImportDeclaration;
 
@@ -30,12 +31,12 @@ public class GeneratedCodeUtils {
     private static final String CLASS = "class";
 
     public static boolean isGenerated(ASTCompilationUnit compilationUnit) {
-        List<ASTImportDeclaration> importDeclarationList
-            = compilationUnit.findChildrenOfType(ASTImportDeclaration.class);
+
+        NodeStream<ASTImportDeclaration> importDeclarationList = compilationUnit.children(ASTImportDeclaration.class);
+
         if (importDeclarationList.isEmpty()) {
             return false;
         }
-
         for (ASTImportDeclaration importDeclaration : importDeclarationList) {
             if (ANNOTATION_NAME.equals(importDeclaration.getImportedName())) {
                 return true;
@@ -49,7 +50,6 @@ public class GeneratedCodeUtils {
         if (classIndex <= 1) {
             return false;
         }
-        //most of file is not generated
         String importHeader = content.substring(0, classIndex);
         return importHeader.contains(ANNOTATION_NAME);
     }

@@ -25,6 +25,7 @@ import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTType;
+import net.sourceforge.pmd.lang.java.types.JTypeMirror;
 import org.jaxen.JaxenException;
 
 /**
@@ -55,9 +56,9 @@ public class PojoMustUsePrimitiveFieldRule extends AbstractPojoRule {
                 if (!shouldProcess) {
                     continue;
                 }
-                Class type = NodeUtils.getNodeType(field);
+                JTypeMirror jTypeMirror = NodeUtils.getNodeType(field);
                 // TODO works only in current compilation file, by crossing files will be null
-                if (type != null && type.isPrimitive()) {
+                if (jTypeMirror != null && jTypeMirror.isPrimitive()) {
                     addViolationWithMessage(data, field.getFirstDescendantOfType(ASTType.class),
                         "java.oop.PojoMustUsePrimitiveFieldRule.violation.msg",
                         new Object[] {VariableUtils.getVariableName(field)});

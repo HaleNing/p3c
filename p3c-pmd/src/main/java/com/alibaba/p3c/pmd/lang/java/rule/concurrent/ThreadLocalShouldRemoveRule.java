@@ -54,7 +54,7 @@ public class ThreadLocalShouldRemoveRule extends AbstractAliRule {
             return super.visit(node, data);
         }
         for (ASTFieldDeclaration fieldDeclaration : fieldDeclarations) {
-            if (NodeUtils.getNodeType(fieldDeclaration) == ThreadLocal.class) {
+            if (NodeUtils.getNodeType(fieldDeclaration).toString().contains("ThreadLocal")) {
                 if (checkThreadLocalWithInitalValue(fieldDeclaration)) { continue; }
                 checkThreadLocal(fieldDeclaration, node, data);
             }

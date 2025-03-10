@@ -69,12 +69,12 @@ public class AvoidManuallyCreateThreadRule extends AbstractAliRule {
         }
         ASTFieldDeclaration fieldDeclaration = node.getFirstParentOfType(ASTFieldDeclaration.class);
         //field declaration with thread allocated
-        if (fieldDeclaration != null && NodeUtils.getNodeType(fieldDeclaration) == Thread.class) {
+        if (fieldDeclaration != null && NodeUtils.getNodeType(fieldDeclaration).toString().equals("Thread")) {
             return addViolationAndReturn(node, data);
         }
         //Declare thread factory field use lambda
         if (node.getDataFlowNode() == null && node.getFirstParentOfType(ASTLambdaExpression.class) != null) {
-            if (fieldDeclaration == null || NodeUtils.getNodeType(fieldDeclaration) != ThreadFactory.class) {
+            if (fieldDeclaration == null || NodeUtils.getNodeType(fieldDeclaration).toString().equals("ThreadFactory")) {
                 return addViolationAndReturn(node, data);
             }
             return super.visit(node, data);

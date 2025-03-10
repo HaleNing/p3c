@@ -69,8 +69,7 @@ public class AvoidConcurrentCompetitionRandomRule extends AbstractAliRule {
             return super.visit(node, data);
         }
         for (ASTFieldDeclaration fieldDeclaration : fieldDeclarations) {
-            if (NodeUtils.getNodeType(fieldDeclaration) == Random.class
-                && fieldDeclaration.isStatic()) {
+            if (NodeUtils.getNodeType(fieldDeclaration).toString().contains("Random") && fieldDeclaration.isStatic()) {
                 checkRandom(fieldDeclaration, methodDeclarations, data);
             }
         }

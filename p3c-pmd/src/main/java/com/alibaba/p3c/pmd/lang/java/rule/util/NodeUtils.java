@@ -1,101 +1,178 @@
-/*
- * Copyright 1999-2017 Alibaba Group.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.p3c.pmd.lang.java.rule.util;
 
-import java.util.concurrent.locks.Lock;
 
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTName;
-import net.sourceforge.pmd.lang.java.ast.ASTPrimaryExpression;
-import net.sourceforge.pmd.lang.java.ast.ASTStatementExpression;
-import net.sourceforge.pmd.lang.java.ast.AbstractJavaAccessTypeNode;
-import net.sourceforge.pmd.lang.java.ast.Token;
-import net.sourceforge.pmd.lang.java.typeresolution.TypeHelper;
+import net.sourceforge.pmd.lang.java.ast.*;
+import net.sourceforge.pmd.lang.java.types.JTypeMirror;
+import net.sourceforge.pmd.lang.java.types.TypeTestUtil;
 
-/**
- * @author caikang
- * @date 2016/11/16
- */
+
 public class NodeUtils {
     public static final String LOCK_NAME = "lock";
     public static final String LOCK_INTERRUPTIBLY_NAME = "lockInterruptibly";
     public static final String UN_LOCK_NAME = "unlock";
 
-    public static boolean isParentOrSelf(Node descendant, Node ancestor) {
-        if (descendant == ancestor) {
-            return true;
-        }
-        if (descendant == null || ancestor == null) {
-            return false;
-        }
-        Node parent = descendant.jjtGetParent();
-        while (parent != ancestor && parent != null) {
-            parent = parent.jjtGetParent();
-        }
-        return parent == ancestor;
-    }
 
     /**
-     * TODO optimize
      *
      * @param expression expression
      * @return true if wrapper type
      */
     public static boolean isWrapperType(ASTPrimaryExpression expression) {
-        return TypeHelper.isA(expression, Integer.class)
-            || TypeHelper.isA(expression, Long.class)
-            || TypeHelper.isA(expression, Boolean.class)
-            || TypeHelper.isA(expression, Byte.class)
-            || TypeHelper.isA(expression, Double.class)
-            || TypeHelper.isA(expression, Short.class)
-            || TypeHelper.isA(expression, Float.class)
-            || TypeHelper.isA(expression, Character.class);
+        return TypeTestUtil.isA(Integer.class, expression)
+                || TypeTestUtil.isA(Long.class, expression)
+                || TypeTestUtil.isA(Boolean.class, expression)
+                || TypeTestUtil.isA(Byte.class, expression)
+                || TypeTestUtil.isA(Double.class, expression)
+                || TypeTestUtil.isA(Short.class, expression)
+                || TypeTestUtil.isA(Float.class, expression)
+                || TypeTestUtil.isA(Character.class, expression);
     }
 
     public static boolean isConstant(ASTFieldDeclaration field) {
-        return field != null && field.isStatic() && field.isFinal();
+        return field != null && field.hasModifiers(JModifier.PUBLIC, JModifier.STATIC, JModifier.FINAL);
     }
 
-    public static Class<?> getNodeType(AbstractJavaAccessTypeNode node) {
-        return node == null ? null : node.getType();
+    /**
+     * Gets the type of a node that implements TypeNode interface.
+     *
+     * @param node The node to get type from
+     * @return The type mirror of the node, or null if node is null or not a TypeNode
+     */
+    public static JTypeMirror getNodeType(Node node) {
+        if (node == null) {
+            return null;
+        }
+        if (node instanceof TypeNode) {
+            return ((TypeNode) node).getTypeMirror();
+        }
+        return null;
     }
 
-    public static boolean isLockStatementExpression(ASTStatementExpression statementExpression) {
-        return isLockTypeAndMethod(statementExpression, LOCK_NAME);
-    }
-
-    public static boolean isUnLockStatementExpression(ASTStatementExpression statementExpression) {
-        return isLockTypeAndMethod(statementExpression, UN_LOCK_NAME);
-    }
-
-    private static boolean isLockTypeAndMethod(ASTStatementExpression statementExpression, String methodName) {
-        ASTName name = statementExpression.getFirstDescendantOfType(ASTName.class);
-        if (name == null || name.getType() == null || !Lock.class.isAssignableFrom(name.getType())) {
+    /**
+     * Checks if the node represents a lock statement expression (e.g., object.wait(), lock.lock()).
+     *
+     * @param node The node to check
+     * @return true if the node represents a lock operation
+     */
+    public static boolean isLockStatementExpression(Node node) {
+        if (!(node instanceof ASTMethodCall)) {
             return false;
         }
-        Token token = (Token)name.jjtGetLastToken();
-        return methodName.equals(token.image);
+
+        ASTMethodCall methodCall = (ASTMethodCall) node;
+        String methodName = methodCall.getMethodName();
+
+        if (methodName == null) {
+            return false;
+        }
+
+        // Check method names commonly used for locking operations
+        return "lock".equals(methodName) ||
+                "tryLock".equals(methodName) ||
+                "wait".equals(methodName) ||
+                "acquire".equals(methodName);
     }
 
+    /**
+     * Checks if the node represents an unlock statement expression (e.g., object.notify(), lock.unlock()).
+     *
+     * @param node The node to check
+     * @return true if the node represents an unlock operation
+     */
+    public static boolean isUnLockStatementExpression(Node node) {
+        if (!(node instanceof ASTMethodCall)) {
+            return false;
+        }
+
+        ASTMethodCall methodCall = (ASTMethodCall) node;
+        String methodName = methodCall.getMethodName();
+
+        if (methodName == null) {
+            return false;
+        }
+
+        // Check method names commonly used for unlocking operations
+        return "unlock".equals(methodName) ||
+                "notify".equals(methodName) ||
+                "notifyAll".equals(methodName) ||
+                "release".equals(methodName);
+    }
+
+    /**
+     * Checks if a method call is on a lock-type object and matches one of the locking methods.
+     *
+     * @param node The method call node to check
+     * @return true if the method is called on a lock-type object
+     */
+    public static boolean isLockTypeAndMethod(Node node) {
+        if (!(node instanceof ASTMethodCall)) {
+            return false;
+        }
+
+        ASTMethodCall methodCall = (ASTMethodCall) node;
+        String methodName = methodCall.getMethodName();
+
+        if (methodName == null) {
+            return false;
+        }
+
+        // Check the type of the qualifier (the object on which the method is called)
+        Node qualifier = methodCall.getQualifier();
+        JTypeMirror type = getNodeType(qualifier);
+
+        if (type == null) {
+            return false;
+        }
+
+        // Check if the type is a lock type
+        String typeName = type.toString();
+        boolean isLockType = typeName.contains("Lock") ||
+                typeName.contains("Semaphore") ||
+                typeName.equals("Object");
+
+        // Check if the method is a lock method
+        boolean isLockMethod = isLockStatementExpression(node) || isUnLockStatementExpression(node);
+
+        return isLockType && isLockMethod;
+    }
+
+    /**
+     * Determines if a node represents a lock operation.
+     *
+     * @param node The node to check
+     * @return true if the node is related to a locking mechanism
+     */
     public static boolean isLockNode(Node node) {
-        if (!(node instanceof ASTStatementExpression)) {
+        if (node == null) {
             return false;
         }
-        ASTStatementExpression statementExpression = (ASTStatementExpression)node;
-        return isLockStatementExpression(statementExpression);
+
+        // Check if it's a method call on a lock object
+        if (isLockTypeAndMethod(node)) {
+            return true;
+        }
+
+        // Check if it's a synchronized block
+        if (node instanceof ASTSynchronizedStatement) {
+            return true;
+        }
+
+        // Check if it's an explicit wait/notify/notifyAll method call
+        if (node instanceof ASTMethodCall) {
+            ASTMethodCall methodCall = (ASTMethodCall) node;
+            String methodName = methodCall.getMethodName();
+
+            if (methodName == null) {
+                return false;
+            }
+
+            // Check for Object's wait/notify/notifyAll methods
+            return "wait".equals(methodName) ||
+                    "notify".equals(methodName) ||
+                    "notifyAll".equals(methodName);
+        }
+
+        return false;
     }
 }

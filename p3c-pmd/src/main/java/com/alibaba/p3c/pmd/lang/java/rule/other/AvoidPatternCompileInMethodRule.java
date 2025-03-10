@@ -45,8 +45,7 @@ public class AvoidPatternCompileInMethodRule extends AbstractXpathRule {
 
     @Override
     public void addViolation(Object data, Node node, String arg) {
-        ASTLocalVariableDeclaration localVariableDeclaration = node.getFirstParentOfType(
-            ASTLocalVariableDeclaration.class);
+        ASTLocalVariableDeclaration localVariableDeclaration = node.getFirstParentOfType(ASTLocalVariableDeclaration.class);
         if (localVariableDeclaration == null) {
             super.addViolation(data, node, arg);
         } else {

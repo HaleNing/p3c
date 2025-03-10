@@ -12,10 +12,6 @@ import net.sourceforge.pmd.lang.java.rule.AbstractJavaRule;
 import net.sourceforge.pmd.reporting.RuleContext;
 import org.apache.commons.lang3.StringUtils;
 
-/**
- * re calculate node type
- *
- */
 public abstract class AbstractAliRule extends AbstractJavaRule {
 
     private static final Map<String, Boolean> TYPE_RESOLVER_MAP = new ConcurrentHashMap<>(16);

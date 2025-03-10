@@ -95,8 +95,7 @@ public class CommentsMustBeJavadocFormatRule extends AbstractAliCommentRule {
 
     @Override
     public Object visit(final ASTFieldDeclaration decl, Object data) {
-        checkComment(decl, data, () -> I18nResources.getMessage(MESSAGE_KEY_PREFIX + ".field",
-            VariableUtils.getVariableName(decl)));
+        checkComment(decl, data, () -> I18nResources.getMessage(MESSAGE_KEY_PREFIX + ".field", VariableUtils.getVariableName(decl)));
         return super.visit(decl, data);
     }
 
