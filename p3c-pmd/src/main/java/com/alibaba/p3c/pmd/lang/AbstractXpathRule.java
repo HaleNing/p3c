@@ -8,10 +8,6 @@ import net.sourceforge.pmd.lang.rule.AbstractRule;
 import net.sourceforge.pmd.lang.rule.xpath.XPathRule;
 
 
-/**
- * @author caikang
- * @date 2017/05/25
- */
 public abstract class AbstractXpathRule extends AbstractRule {
 
 

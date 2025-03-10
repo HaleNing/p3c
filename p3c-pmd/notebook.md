@@ -107,3 +107,204 @@ visit 方法是 主动的，由 PMD 引擎驱动，遍历 AST 并执行规则逻
 addViolation 方法是 被动的，由 visit 方法在检测到违规时 主动调用，用于报告违规。
 RuleContext 是 桥梁，连接 visit 方法和最终的违规报告。 visit 方法通过 addViolation 将违规信息放入 RuleContext，PMD 引擎从 RuleContext 中提取信息生成报告。
 理解 visit 和 addViolation 的协作关系，有助于你更好地编写 PMD 规则，有效地检测和报告代码中的问题。
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+AbstractAliRule 和 FixClassTypeResolver 修改的逻辑和思路：
+
+PMD 6.x 与 PMD 7.0 的架构差异及代码修改思路解析
+1. PMD 6.x 与 PMD 7.0 的核心架构差异
+   PMD 6.x 架构特点
+   访问者模式实现：使用 jjtAccept 进行节点访问
+   类型解析：通过 ClassTypeResolver 类解析类型信息
+   违规报告：使用 RuleContext 的 getReport() 方法获取报告对象
+   节点遍历：节点树通过显式遍历处理
+   PMD 7.0 架构特点
+   访问者模式重构：使用访问者接口 (JavaVisitor)，移除 jjtAccept 方法
+   引入 AstInfo：新增 AstInfo 类管理语法树元数据
+   新型符号表：添加 JSymbolTable 和 TypeSystem 进行类型管理
+   报告机制变更：通过 RuleContext 直接添加违规信息
+   Java 21 支持：支持 Java 21 的未命名类等新特性
+2. AbstractAliRule 修改思路解析
+   原 AbstractAliRule 类中的主要问题：
+
+
+使用了已弃用的 jjtAccept 方法进行遍历
+尝试访问不再存在的 Report 对象
+无法正确获取文件名
+修改思路
+文件名获取：
+
+
+String sourceCodeFilename = node.getReportLocation().getFileId().getFileName();
+在 PMD 7.0 中，文件名不再通过 Report 获取，而是通过 ReportLocation 对象
+
+
+类型解析：
+
+
+private void resolveType(ASTCompilationUnit node, Object data) {
+// 首先尝试使用 AstInfo 中的符号表
+Object astInfo = node.getAstInfo();
+if (astInfo != null) {
+// 通过反射调用符号表解析
+} else {
+// 降级使用自定义解析器
+}
+}
+使用分层策略，优先使用 PMD 7.0 内置符号表，失败时降级至自定义解析
+
+
+使用反射：
+
+
+Object symbolTable = astInfo.getClass().getMethod("getSymbolTable").invoke(astInfo);
+通过反射实现更松散的耦合，提高代码对不同 PMD 版本的适应性
+
+
+3. FixClassTypeResolver 修改思路解析
+   原 FixClassTypeResolver 类无法在 PMD 7.0 中使用，因为：
+
+
+继承的 ClassTypeResolver 类已不存在
+依赖的 jjtAccept 方法已移除
+类型解析机制完全变更
+修改思路
+移除继承关系：
+
+
+public class FixClassTypeResolver { // 不再继承 ClassTypeResolver
+由于父类在 PMD 7.0 中已经不存在
+
+
+直接使用新 API：
+
+
+JSymbolTable symbolTable = node.getSymbolTable();
+TypeSystem typeSystem = node.getTypeSystem();
+直接调用 PMD 7.0 提供的类型系统 API
+
+
+反射机制适配：
+
+
+Method resolveMethod = getResolveMethod(symbolTable.getClass());
+if (resolveMethod != null) {
+resolveMethod.invoke(symbolTable);
+}
+使用反射查找并调用解析方法，增强兼容性
+
+
+错误处理与日志：
+
+
+LOG.log(Level.WARNING, "Type resolution failed: " + e.getMessage(), e);
+加强错误处理，便于问题定位
+
+
+4. 技术实现的深层考虑
+   向后兼容性：使用反射和防御性编程，确保代码在 PMD 7.0 各次要版本间保持兼容
+
+
+隔离变化：将 PMD 版本变化隔离在 FixClassTypeResolver 中，减少对业务规则的影响
+
+
+性能考量：维持类型信息缓存机制 (TYPE_RESOLVER_MAP)，避免重复解析
+
+
+错误恢复：即使类型解析失败，规则检查仍然可以继续执行
+
+
+5. 修改的根本原因
+   PMD 7.0 相比 6.x 进行了深度重构，几乎整个核心架构都发生了变化。我们的修改是为了：
+
+
+适应新架构：符合 PMD 7.0 的设计理念和 API
+保持功能等价：确保规则检查质量不受影响
+提供向后兼容：确保各种 PMD 7.x 版本都可以正常工作
+维持代码结构：尽量保留原有代码组织和命名，减少学习成本
+通过这些修改，我们成功地将阿里巴巴 P3C 代码规范检查工具迁移到了 PMD 7.0 平台，同时保持了规则的有效性和代码的可维护性。
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+此代码通过四个关键步骤工作：
+
+
+动态查找方法：astInfo.getClass().getMethod("getSymbolTable") 通过反射查找 AstInfo 类的 getSymbolTable 方法
+
+
+调用获取符号表方法：.invoke(astInfo) 在 astInfo 实例上调用上一步找到的方法，获取符号表对象
+
+
+查找解析方法：symbolTable.getClass().getMethod("resolve") 查找符号表类的 resolve 方法
+
+
+触发符号表解析：.invoke(symbolTable) 调用解析方法，激活符号表的类型解析机制
+
+
+为什么使用反射实现
+使用反射的主要原因有：
+
+
+兼容性考虑：避免直接依赖特定版本的 PMD API，增强兼容性
+
+
+PMD 7.0 是大版本更新，API 可能在小版本间有所变动
+通过反射可以在不重新编译的情况下适应这些变化
+防御性编程：使用 try-catch 包装整个过程，确保即使符号表获取失败也不会中断规则检查
+
+
+在类型解析失败时提供清晰的错误信息
+允许降级到备选实现
+解耦合设计：减少对 PMD 内部实现的直接依赖
+
+
+PMD 的内部 API 可能会改变，但反射机制让代码更加稳定
+避免直接类型引用，降低编译时依赖
+与 PMD 7.0 架构变化的关系
+PMD 7.0 引入的 AstInfo 和 JSymbolTable 表示语法树元数据和符号信息，这段代码正是为了适应这一架构变化。在 PMD 6.x 中，类型解析通常通过 ClassTypeResolver 完成，而 PMD 7.0 将这一职责移交给了符号表系统。
+
+通过反射触发符号表的解析机制，这段代码在不直接依赖新 API 的情况下实现了与 PMD 7.0 类型系统的对接，为规则检查提供了必要的类型信息。
+
+PMD 工作流程中的位置
+在 PMD 的规则检查流程中，这段代码处于以下位置：
+源代码解析 → 生成 AST
+类型解析 ← 我们讨论的代码在这里
+规则检查 → 识别违规
+生成报告 → 输出结果
+
+
+这段代码在 PMD 工作原理中完成了以下核心任务：
+
+
+符号表延迟加载触发：PMD 7.0 使用懒加载方式处理符号表，调用 resolve() 方法触发真正的符号解析
+
+
+类型信息构建：激活符号表后，PMD 会建立：
+
+
+变量定义和引用之间的映射
+方法调用和定义之间的��接
+类型继承和实现关系���解析
+作用域信息：确定变量的可见性和有效范围，这对于许多规则检查至关重要
+
+
+对规则检查的重要性
+这段代码对规则检查至关重要，因为：
+
+
+类型依赖规则：许多规则需要类型信息才能正常工作，如：
+
+
+接口与实现检查规则
+类型转换安全性规则
+泛型使用规则
+引用关系：确定变量、方法引用的正确性，是检查未使用代码、冗余代码的基础
+
+
+准确性保障：如果没有这一��，许多依赖类型信息的规则将无法正常工作或产生误报
+
+
+在 PMD 6.x 中，这一步是通过 ClassTypeResolver 自动完成的，而在 PMD 7.0 中需要我们主动触发符号表的解析过程。这段反射代码正是确保了这一关键步骤在新架构下仍然能够正确执行。
+
