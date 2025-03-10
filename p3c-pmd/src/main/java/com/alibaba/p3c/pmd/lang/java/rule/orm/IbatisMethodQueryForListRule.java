@@ -15,26 +15,19 @@
  */
 package com.alibaba.p3c.pmd.lang.java.rule.orm;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.alibaba.p3c.pmd.I18nResources;
 import com.alibaba.p3c.pmd.lang.java.rule.AbstractAliRule;
 import com.alibaba.p3c.pmd.lang.java.util.VariableUtils;
 import com.alibaba.p3c.pmd.lang.java.util.ViolationUtils;
-
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
-import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTImportDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTLiteral;
-import net.sourceforge.pmd.lang.java.ast.ASTName;
-import net.sourceforge.pmd.lang.java.ast.ASTPrimaryExpression;
+import net.sourceforge.pmd.lang.java.ast.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jaxen.JaxenException;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * [Mandatory] iBatis built in queryForList(String statementName, int start, int size) is not recommended.
@@ -56,20 +49,20 @@ public class IbatisMethodQueryForListRule extends AbstractAliRule {
     private static final int LITERALS_SIZE = 3;
 
     @Override
-    public Object visit(ASTCompilationUnit node, Object data) {
-        boolean hasImportSqlMapClient = hasSqlMapClientImport(node.findChildrenOfType(ASTImportDeclaration.class));
+    public Object visit(ASTCompilationUnit compilationUnitNode, Object data) {
+        boolean hasImportSqlMapClient = hasSqlMapClientImport(compilationUnitNode.findChildrenOfType(ASTImportDeclaration.class));
         if (!hasImportSqlMapClient) {
-            return super.visit(node, data);
+            return super.visit(compilationUnitNode, data);
         }
         List<ASTClassOrInterfaceDeclaration> classOrInterfaceDeclarations
-            = node.findDescendantsOfType(ASTClassOrInterfaceDeclaration.class);
+                = compilationUnitNode.findDescendantsOfType(ASTClassOrInterfaceDeclaration.class);
         if (classOrInterfaceDeclarations == null || classOrInterfaceDeclarations.isEmpty()) {
-            return super.visit(node, data);
+            return super.visit(compilationUnitNode, data);
         }
         for (ASTClassOrInterfaceDeclaration classOrInterfaceDeclaration : classOrInterfaceDeclarations) {
             visitAstClassOrInterfaceDeclaration(classOrInterfaceDeclaration, data);
         }
-        return super.visit(node, data);
+        return super.visit(compilationUnitNode, data);
     }
 
     private void visitAstClassOrInterfaceDeclaration(ASTClassOrInterfaceDeclaration classOrInterfaceDeclaration,

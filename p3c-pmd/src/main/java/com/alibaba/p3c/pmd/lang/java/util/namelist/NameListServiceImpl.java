@@ -15,19 +15,16 @@
  */
 package com.alibaba.p3c.pmd.lang.java.util.namelist;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
-/**
- * @author changle.lq
- * @date 2017/03/27
- */
 public class NameListServiceImpl implements NameListService {
 
     private static final String NAME_LIST_PROPERTY_FILE_NAME = "namelist.properties";

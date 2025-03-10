@@ -2,10 +2,9 @@
 package com.alibaba.p3c.pmd.lang;
 
 import com.alibaba.p3c.pmd.I18nResources;
-
-import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.lang.java.ast.JavaNode;
 import net.sourceforge.pmd.lang.rule.AbstractRule;
-import net.sourceforge.pmd.lang.rule.xpath.XPathRule;
+
 
 
 public abstract class AbstractXpathRule extends AbstractRule {
@@ -29,7 +28,7 @@ public abstract class AbstractXpathRule extends AbstractRule {
      * @param node
      * @param message
      */
-    public void addViolationWithMessage(Object data, Node node, String message) {
+    public void addViolationWithMessage(Object data, JavaNode node, String message) {
         super.asCtx(data).addViolationWithMessage(node, I18nResources.getMessageWithExceptionHandled(message));
     }
 
@@ -40,7 +39,7 @@ public abstract class AbstractXpathRule extends AbstractRule {
      * @param message
      * @param args
      */
-    public void addViolationWithMessage(Object data, Node node, String message, Object[] args) {
+    public void addViolationWithMessage(Object data, JavaNode node, String message, Object[] args) {
         super.asCtx(data).addViolationWithMessage(node,
                 String.format(I18nResources.getMessageWithExceptionHandled(message), args));
     }
@@ -51,7 +50,7 @@ public abstract class AbstractXpathRule extends AbstractRule {
      * @param node
      * @param arg
      */
-    public void addViolation(Object data, Node node, String arg) {
+    public void addViolation(Object data, JavaNode node, String arg) {
         super.asCtx(data).addViolation(node, arg);
 
     }

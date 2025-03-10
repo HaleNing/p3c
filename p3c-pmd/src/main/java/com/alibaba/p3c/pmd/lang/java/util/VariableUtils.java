@@ -61,8 +61,7 @@ public class VariableUtils {
         }
 
         List<String> names = new ArrayList<>();
-        node.descendants(ASTVariableDeclarator.class)
-                .forEach(declarator -> names.add(declarator.getName()));
+        node.descendants(ASTVariableDeclarator.class).forEach(declarator -> names.add(declarator.getName()));
 
         return names;
     }

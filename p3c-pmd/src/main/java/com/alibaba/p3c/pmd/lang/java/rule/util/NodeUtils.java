@@ -5,6 +5,9 @@ import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.java.ast.*;
 import net.sourceforge.pmd.lang.java.types.JTypeMirror;
 import net.sourceforge.pmd.lang.java.types.TypeTestUtil;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Objects;
 
 
 public class NodeUtils {
@@ -14,7 +17,7 @@ public class NodeUtils {
 
 
     /**
-     *
+     * Check if the expression is a wrapper type. like Long Boolean Integer etc.....
      * @param expression expression
      * @return true if wrapper type
      */
@@ -29,6 +32,11 @@ public class NodeUtils {
                 || TypeTestUtil.isA(Character.class, expression);
     }
 
+    /**
+     * check if the expression is a Constant type
+     * @param field
+     * @return
+     */
     public static boolean isConstant(ASTFieldDeclaration field) {
         return field != null && field.hasModifiers(JModifier.PUBLIC, JModifier.STATIC, JModifier.FINAL);
     }
@@ -39,7 +47,7 @@ public class NodeUtils {
      * @param node The node to get type from
      * @return The type mirror of the node, or null if node is null or not a TypeNode
      */
-    public static JTypeMirror getNodeType(Node node) {
+    public static JTypeMirror getNodeType(JavaNode node) {
         if (node == null) {
             return null;
         }
@@ -50,12 +58,42 @@ public class NodeUtils {
     }
 
     /**
+     * Gets the type of a field declaration node.
+     * @param astFieldDeclaration
+     * @return
+     */
+    public static String getNodeType(ASTFieldDeclaration astFieldDeclaration) {
+        ASTType typeNode = astFieldDeclaration.getTypeNode();
+        if (typeNode != null) {
+            return Objects.requireNonNull(typeNode.getTypeMirror().getSymbol()).getSimpleName();
+        }
+
+        return "";
+    }
+
+    /**
+     * Gets the type of a local variable declaration node.
+     * @param astLocalVariableDeclaration
+     * @return
+     */
+    public static String getNodeType(ASTLocalVariableDeclaration astLocalVariableDeclaration) {
+        ASTType typeNode = astLocalVariableDeclaration.getTypeNode();
+        if (typeNode != null) {
+            return Objects.requireNonNull(typeNode.getTypeMirror().getSymbol()).getSimpleName();
+        }
+
+        return null;
+    }
+
+
+
+    /**
      * Checks if the node represents a lock statement expression (e.g., object.wait(), lock.lock()).
      *
      * @param node The node to check
      * @return true if the node represents a lock operation
      */
-    public static boolean isLockStatementExpression(Node node) {
+    public static boolean isLockStatementExpression(JavaNode node) {
         if (!(node instanceof ASTMethodCall)) {
             return false;
         }
@@ -63,7 +101,7 @@ public class NodeUtils {
         ASTMethodCall methodCall = (ASTMethodCall) node;
         String methodName = methodCall.getMethodName();
 
-        if (methodName == null) {
+        if (StringUtils.isBlank(methodName)) {
             return false;
         }
 
@@ -105,7 +143,7 @@ public class NodeUtils {
      * @param node The method call node to check
      * @return true if the method is called on a lock-type object
      */
-    public static boolean isLockTypeAndMethod(Node node) {
+    public static boolean isLockTypeAndMethod(JavaNode node) {
         if (!(node instanceof ASTMethodCall)) {
             return false;
         }
@@ -118,7 +156,7 @@ public class NodeUtils {
         }
 
         // Check the type of the qualifier (the object on which the method is called)
-        Node qualifier = methodCall.getQualifier();
+        JavaNode qualifier = methodCall.getQualifier();
         JTypeMirror type = getNodeType(qualifier);
 
         if (type == null) {
@@ -143,7 +181,7 @@ public class NodeUtils {
      * @param node The node to check
      * @return true if the node is related to a locking mechanism
      */
-    public static boolean isLockNode(Node node) {
+    public static boolean isLockNode(JavaNode node) {
         if (node == null) {
             return false;
         }
@@ -163,7 +201,7 @@ public class NodeUtils {
             ASTMethodCall methodCall = (ASTMethodCall) node;
             String methodName = methodCall.getMethodName();
 
-            if (methodName == null) {
+            if (StringUtils.isBlank(methodName)) {
                 return false;
             }
 

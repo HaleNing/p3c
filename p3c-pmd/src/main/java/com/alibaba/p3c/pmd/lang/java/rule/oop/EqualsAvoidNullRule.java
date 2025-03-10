@@ -1,22 +1,13 @@
 package com.alibaba.p3c.pmd.lang.java.rule.oop;
 
-import java.util.List;
-
 import com.alibaba.p3c.pmd.lang.java.rule.AbstractAliRule;
 import com.alibaba.p3c.pmd.lang.java.rule.util.NodeUtils;
 import com.alibaba.p3c.pmd.lang.java.util.StringAndCharConstants;
-
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
-import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTLiteral;
-import net.sourceforge.pmd.lang.java.ast.ASTName;
-import net.sourceforge.pmd.lang.java.ast.ASTPrimaryExpression;
-import net.sourceforge.pmd.lang.java.ast.ASTPrimaryPrefix;
-import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclaratorId;
-import net.sourceforge.pmd.lang.java.ast.AbstractJavaNode;
-import net.sourceforge.pmd.lang.java.ast.Token;
+import net.sourceforge.pmd.lang.java.ast.*;
 import org.jaxen.JaxenException;
+
+import java.util.List;
 
 /**
  * [Mandatory] Since NullPointerException can possibly be thrown while calling the equals method of Object,
@@ -40,22 +31,22 @@ public class EqualsAvoidNullRule extends AbstractAliRule {
     private static final String METHOD_EQUALS = "equals";
 
     @Override
-    public Object visit(ASTCompilationUnit node, Object data) {
+    public Object visit(ASTCompilationUnit compilationUnitNode, Object data) {
         try {
-            List<Node> equalsInvocations = node.findChildNodesWithXPath(XPATH);
+            List<Node> equalsInvocations = compilationUnitNode.findChildNodesWithXPath(XPATH);
             if (equalsInvocations == null || equalsInvocations.isEmpty()) {
-                return super.visit(node, data);
+                return super.visit(compilationUnitNode, data);
             }
             for (Node invocation : equalsInvocations) {
                 // https://github.com/alibaba/p3c/issues/471
                 if (callerIsLiteral(invocation)) {
-                    return super.visit(node, data);
+                    return super.visit(compilationUnitNode, data);
                 }
 
                 // if arguments of equals is complicate expression, skip the check
                 List<? extends Node> simpleExpressions = invocation.findChildNodesWithXPath(INVOCATION_PREFIX_XPATH);
                 if (simpleExpressions == null || simpleExpressions.isEmpty()) {
-                    return super.visit(node, data);
+                    return super.visit(compilationUnitNode, data);
                 }
 
                 ASTPrimaryPrefix right = (ASTPrimaryPrefix)simpleExpressions.get(0);
@@ -71,7 +62,7 @@ public class EqualsAvoidNullRule extends AbstractAliRule {
                     boolean nameInvalid = name == null || name.getNameDeclaration() == null
                         || name.getNameDeclaration().getNode() == null;
                     if (nameInvalid) {
-                        return super.visit(node, data);
+                        return super.visit(compilationUnitNode, data);
                     }
                     Node nameNode = name.getNameDeclaration().getNode();
                     if ((nameNode instanceof ASTVariableDeclaratorId) && (nameNode.getNthParent(
@@ -86,7 +77,7 @@ public class EqualsAvoidNullRule extends AbstractAliRule {
         } catch (JaxenException e) {
             throw new RuntimeException("XPath expression " + XPATH + " failed: " + e.getLocalizedMessage(), e);
         }
-        return super.visit(node, data);
+        return super.visit(compilationUnitNode, data);
     }
 
     private boolean callerIsLiteral(Node equalsInvocation) {

@@ -15,28 +15,17 @@
  */
 package com.alibaba.p3c.pmd.lang.java.rule.other;
 
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
 import com.alibaba.p3c.pmd.I18nResources;
 import com.alibaba.p3c.pmd.lang.java.rule.AbstractAliRule;
 import com.alibaba.p3c.pmd.lang.java.rule.util.NodeSortUtils;
 import com.alibaba.p3c.pmd.lang.java.util.ViolationUtils;
-
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTAnnotation;
-import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceBodyDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
-import net.sourceforge.pmd.lang.java.ast.ASTExpression;
-import net.sourceforge.pmd.lang.java.ast.ASTMethodDeclaration;
-import net.sourceforge.pmd.lang.java.ast.AbstractJavaNode;
-import net.sourceforge.pmd.lang.java.ast.Comment;
-import net.sourceforge.pmd.lang.java.ast.FormalComment;
-import net.sourceforge.pmd.lang.java.ast.MultiLineComment;
-import net.sourceforge.pmd.lang.java.ast.SingleLineComment;
-import net.sourceforge.pmd.lang.java.ast.Token;
+import net.sourceforge.pmd.lang.java.ast.*;
+
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * [Recommended] The total number of lines for a method should not be more than 80.
@@ -57,9 +46,9 @@ public class MethodTooLongRule extends AbstractAliRule {
     private SortedMap<Integer, Node> sortedNodeAndComment;
 
     @Override
-    public Object visit(ASTCompilationUnit cUnit, Object data) {
-        sortedNodeAndComment = orderedCommentsAndExpressions(cUnit);
-        return super.visit(cUnit, data);
+    public Object visit(ASTCompilationUnit compilationUnitNode, Object data) {
+        sortedNodeAndComment = orderedCommentsAndExpressions(compilationUnitNode);
+        return super.visit(compilationUnitNode, data);
     }
 
     @Override

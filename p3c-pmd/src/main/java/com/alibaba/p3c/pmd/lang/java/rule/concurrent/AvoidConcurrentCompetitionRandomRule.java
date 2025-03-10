@@ -15,22 +15,14 @@
  */
 package com.alibaba.p3c.pmd.lang.java.rule.concurrent;
 
-import java.util.List;
-import java.util.Random;
-
 import com.alibaba.p3c.pmd.lang.java.rule.AbstractAliRule;
-
 import com.alibaba.p3c.pmd.lang.java.rule.util.NodeUtils;
 import com.alibaba.p3c.pmd.lang.java.util.VariableUtils;
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceType;
-import net.sourceforge.pmd.lang.java.ast.ASTExtendsList;
-import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTMethodDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTName;
-import net.sourceforge.pmd.lang.java.ast.ASTPrimaryPrefix;
+import net.sourceforge.pmd.lang.java.ast.*;
 import org.jaxen.JaxenException;
+
+import java.util.List;
 
 /**
  * 6.13 [Recommended] Avoid using Random instance by multiple threads.
@@ -69,7 +61,7 @@ public class AvoidConcurrentCompetitionRandomRule extends AbstractAliRule {
             return super.visit(node, data);
         }
         for (ASTFieldDeclaration fieldDeclaration : fieldDeclarations) {
-            if (NodeUtils.getNodeType(fieldDeclaration).toString().contains("Random") && fieldDeclaration.isStatic()) {
+            if (NodeUtils.getNodeType(fieldDeclaration).contains("Random") && fieldDeclaration.isStatic()) {
                 checkRandom(fieldDeclaration, methodDeclarations, data);
             }
         }

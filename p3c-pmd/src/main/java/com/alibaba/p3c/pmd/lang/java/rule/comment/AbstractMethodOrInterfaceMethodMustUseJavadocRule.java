@@ -15,22 +15,15 @@
  */
 package com.alibaba.p3c.pmd.lang.java.rule.comment;
 
-import java.util.List;
-import java.util.regex.Pattern;
-
 import com.alibaba.p3c.pmd.I18nResources;
 import com.alibaba.p3c.pmd.lang.java.util.ViolationUtils;
-
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceDeclaration;
+import net.sourceforge.pmd.lang.java.ast.ASTClassDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
 import net.sourceforge.pmd.lang.java.ast.ASTMethodDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTName;
-import net.sourceforge.pmd.lang.java.ast.ASTNameList;
-import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclaratorId;
-import net.sourceforge.pmd.lang.java.ast.Comment;
-import net.sourceforge.pmd.lang.java.ast.FormalComment;
-import org.jaxen.JaxenException;
+
+import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * [Mandatory] Abstract methods (including methods in interface) should be commented by Javadoc.
@@ -53,14 +46,16 @@ public class AbstractMethodOrInterfaceMethodMustUseJavadocRule extends AbstractA
     private static final Pattern RETURN_PATTERN = Pattern.compile(".*@return.*", Pattern.DOTALL);
 
     @Override
-    public Object visit(ASTClassOrInterfaceDeclaration decl, Object data) {
+    public Object visit(ASTClassDeclaration decl, Object data) {
         if (decl.isAbstract()) {
-            List<ASTMethodDeclaration> methods = decl.findDescendantsOfType(ASTMethodDeclaration.class);
+            List<ASTMethodDeclaration> methods = decl.descendants(ASTMethodDeclaration.class).toList();
             for (ASTMethodDeclaration method : methods) {
                 if (!method.isAbstract()) {
                     continue;
                 }
                 Comment comment = method.comment();
+
+
                 if (null == comment || !(comment instanceof FormalComment)) {
                     ViolationUtils.addViolationWithPrecisePosition(this, method, data,
                         I18nResources.getMessage(MESSAGE_KEY_PREFIX + ".abstract",

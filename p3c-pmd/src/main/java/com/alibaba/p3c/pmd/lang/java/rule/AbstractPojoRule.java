@@ -1,11 +1,10 @@
 package com.alibaba.p3c.pmd.lang.java.rule;
 
-import java.util.List;
-
 import com.alibaba.p3c.pmd.lang.java.util.PojoUtils;
-
-import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
 import net.sourceforge.pmd.lang.java.ast.ASTClassDeclaration;
+import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
+
+import java.util.List;
 
 /**
  * Base class for POJO
@@ -16,15 +15,15 @@ public abstract class AbstractPojoRule extends AbstractAliRule {
      * filter for all POJO class, skip if no POJO.
      * consider inner class
      *
-     * @param node compilation unit
+     * @param compilationUnitNode compilation unit
      * @param data rule context
      * @return result
      */
     @Override
-    public Object visit(ASTCompilationUnit node, Object data) {
+    public Object visit(ASTCompilationUnit compilationUnitNode, Object data) {
         // proceed if contains POJO
-        if (hasPojoInJavaFile(node)) {
-            return super.visit(node, data);
+        if (hasPojoInJavaFile(compilationUnitNode)) {
+            return super.visit(compilationUnitNode, data);
         }
         return data;
     }

@@ -15,22 +15,15 @@
  */
 package com.alibaba.p3c.pmd.lang.java.rule.constant;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.alibaba.p3c.pmd.lang.java.rule.AbstractAliRule;
 import com.alibaba.p3c.pmd.lang.java.util.namelist.NameListConfig;
-
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
-import net.sourceforge.pmd.lang.java.ast.ASTForStatement;
-import net.sourceforge.pmd.lang.java.ast.ASTIfStatement;
-import net.sourceforge.pmd.lang.java.ast.ASTLiteral;
-import net.sourceforge.pmd.lang.java.ast.ASTWhileStatement;
-import net.sourceforge.pmd.util.StringUtil;
-
+import net.sourceforge.pmd.lang.java.ast.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jaxen.JaxenException;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * [Mandatory] Magic values, except for predefined, are forbidden in coding.
@@ -51,16 +44,16 @@ public class UndefineMagicConstantRule extends AbstractAliRule {
     /**
      * An undefined that belongs to non-looped if statements
      *
-     * @param node compilation unit
+     * @param compilationUnitNode compilation unit
      * @param data rule context
      */
     @Override
-    public Object visit(ASTCompilationUnit node, Object data) {
+    public Object visit(ASTCompilationUnit compilationUnitNode, Object data) {
         // removed repeat magic value , to prevent the parent class to find sub-variable nodes when there is a repeat
         List<ASTLiteral> currentLiterals = new ArrayList<ASTLiteral>();
         try {
             // Find the parent node of the undefined variable
-            List<Node> parentNodes = node.findChildNodesWithXPath(XPATH);
+            List<Node> parentNodes = compilationUnitNode.findChildNodesWithXPath(XPATH);
 
             for (Node parentItem : parentNodes) {
                 List<ASTLiteral> literals = parentItem.findDescendantsOfType(ASTLiteral.class);
@@ -76,7 +69,7 @@ public class UndefineMagicConstantRule extends AbstractAliRule {
         } catch (JaxenException e) {
             e.printStackTrace();
         }
-        return super.visit(node, data);
+        return super.visit(compilationUnitNode, data);
     }
 
     /**

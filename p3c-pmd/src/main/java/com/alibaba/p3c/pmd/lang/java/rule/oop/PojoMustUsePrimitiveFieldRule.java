@@ -15,11 +15,7 @@
  */
 package com.alibaba.p3c.pmd.lang.java.rule.oop;
 
-import java.util.List;
-
 import com.alibaba.p3c.pmd.lang.java.rule.AbstractPojoRule;
-
-import com.alibaba.p3c.pmd.lang.java.rule.util.NodeUtils;
 import com.alibaba.p3c.pmd.lang.java.util.VariableUtils;
 import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceDeclaration;
@@ -27,6 +23,8 @@ import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTType;
 import net.sourceforge.pmd.lang.java.types.JTypeMirror;
 import org.jaxen.JaxenException;
+
+import java.util.List;
 
 /**
  * [Mandatory]  Rules for using primitive data types and wrapper classes:
@@ -56,9 +54,9 @@ public class PojoMustUsePrimitiveFieldRule extends AbstractPojoRule {
                 if (!shouldProcess) {
                     continue;
                 }
-                JTypeMirror jTypeMirror = NodeUtils.getNodeType(field);
+                JTypeMirror typeMirror = field.getTypeNode().getTypeMirror();
                 // TODO works only in current compilation file, by crossing files will be null
-                if (jTypeMirror != null && jTypeMirror.isPrimitive()) {
+                if (typeMirror != null && typeMirror.isPrimitive()) {
                     addViolationWithMessage(data, field.getFirstDescendantOfType(ASTType.class),
                         "java.oop.PojoMustUsePrimitiveFieldRule.violation.msg",
                         new Object[] {VariableUtils.getVariableName(field)});

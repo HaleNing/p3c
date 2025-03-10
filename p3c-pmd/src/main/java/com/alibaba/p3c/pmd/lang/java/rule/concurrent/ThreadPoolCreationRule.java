@@ -15,18 +15,13 @@
  */
 package com.alibaba.p3c.pmd.lang.java.rule.concurrent;
 
+import com.alibaba.p3c.pmd.lang.java.rule.AbstractAliRule;
+import net.sourceforge.pmd.lang.java.ast.*;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
-
-import com.alibaba.p3c.pmd.lang.java.rule.AbstractAliRule;
-
-import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
-import net.sourceforge.pmd.lang.java.ast.ASTImportDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTName;
-import net.sourceforge.pmd.lang.java.ast.ASTPrimaryExpression;
-import net.sourceforge.pmd.lang.java.ast.Token;
 
 /**
  * [Mandatory] A thread pool should be created by ThreadPoolExecutor rather than Executors.
@@ -48,11 +43,11 @@ public class ThreadPoolCreationRule extends AbstractAliRule {
     private static final String NEW_SINGLE_SCHEDULED = "newSingleThreadScheduledExecutor";
 
     @Override
-    public Object visit(ASTCompilationUnit node, Object data) {
-        Object superResult = super.visit(node, data);
+    public Object visit(ASTCompilationUnit compilationUnitNode, Object data) {
+        Object superResult = super.visit(compilationUnitNode, data);
         Info info = new Info();
 
-        List<ASTImportDeclaration> importDeclarations = node.findChildrenOfType(ASTImportDeclaration.class);
+        List<ASTImportDeclaration> importDeclarations = compilationUnitNode.findChildrenOfType(ASTImportDeclaration.class);
         for (ASTImportDeclaration importDeclaration : importDeclarations) {
             ASTName name = importDeclaration.getFirstChildOfType(ASTName.class);
             info.executorsUsed = info.executorsUsed
@@ -61,7 +56,7 @@ public class ThreadPoolCreationRule extends AbstractAliRule {
                 info.importedExecutorsMethods.add(name.getImage());
             }
         }
-        List<ASTPrimaryExpression> primaryExpressions = node.findDescendantsOfType(ASTPrimaryExpression.class);
+        List<ASTPrimaryExpression> primaryExpressions = compilationUnitNode.findDescendantsOfType(ASTPrimaryExpression.class);
         for(ASTPrimaryExpression primaryExpression : primaryExpressions){
             if (!info.executorsUsed && info.importedExecutorsMethods.isEmpty()) {
                 continue;

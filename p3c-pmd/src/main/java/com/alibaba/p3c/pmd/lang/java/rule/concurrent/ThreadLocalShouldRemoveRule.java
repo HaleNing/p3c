@@ -15,21 +15,16 @@
  */
 package com.alibaba.p3c.pmd.lang.java.rule.concurrent;
 
-import java.util.List;
-
 import com.alibaba.p3c.pmd.I18nResources;
 import com.alibaba.p3c.pmd.lang.java.rule.AbstractAliRule;
 import com.alibaba.p3c.pmd.lang.java.rule.util.NodeUtils;
 import com.alibaba.p3c.pmd.lang.java.util.VariableUtils;
 import com.alibaba.p3c.pmd.lang.java.util.ViolationUtils;
-
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
-import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTMethodDeclarator;
-import net.sourceforge.pmd.lang.java.ast.ASTName;
-import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclarator;
+import net.sourceforge.pmd.lang.java.ast.*;
 import org.jaxen.JaxenException;
+
+import java.util.List;
 
 /**
  * [Mandatory] Customized ThreadLocal variables must be recycled, especially when using thread pools in which threads
@@ -48,18 +43,18 @@ public class ThreadLocalShouldRemoveRule extends AbstractAliRule {
     private static final String WITH_INITIAL = "ThreadLocal.withInitial";
 
     @Override
-    public Object visit(ASTCompilationUnit node, Object data) {
-        List<ASTFieldDeclaration> fieldDeclarations = node.findDescendantsOfType(ASTFieldDeclaration.class);
+    public Object visit(ASTCompilationUnit compilationUnitNode, Object data) {
+        List<ASTFieldDeclaration> fieldDeclarations = compilationUnitNode.findDescendantsOfType(ASTFieldDeclaration.class);
         if (fieldDeclarations == null || fieldDeclarations.isEmpty()) {
-            return super.visit(node, data);
+            return super.visit(compilationUnitNode, data);
         }
         for (ASTFieldDeclaration fieldDeclaration : fieldDeclarations) {
             if (NodeUtils.getNodeType(fieldDeclaration).toString().contains("ThreadLocal")) {
                 if (checkThreadLocalWithInitalValue(fieldDeclaration)) { continue; }
-                checkThreadLocal(fieldDeclaration, node, data);
+                checkThreadLocal(fieldDeclaration, compilationUnitNode, data);
             }
         }
-        return super.visit(node, data);
+        return super.visit(compilationUnitNode, data);
     }
 
     private boolean checkThreadLocalWithInitalValue(ASTFieldDeclaration fieldDeclaration) {
