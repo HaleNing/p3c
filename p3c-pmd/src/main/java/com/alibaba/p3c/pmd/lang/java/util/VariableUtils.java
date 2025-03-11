@@ -9,10 +9,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author caikang
- * @date 2019/04/22
- */
 public class VariableUtils {
     /**
      * 获取变量声明中的变量名
@@ -20,12 +16,12 @@ public class VariableUtils {
      * @param node 变量声明节点
      * @return 变量名，如果有多个变量则返回第一个，如果无法获取则返回null
      */
-    public static String getVariableName(JavaNode node) {
+    public static String getVariableNameByJavaNode(JavaNode node) {
         if (node == null) {
             return null;
         }
-
         ASTVariableDeclarator variableDeclarator = node.descendants(ASTVariableDeclarator.class).first();
+        // variableDeclarator.getName() in PMD7 = variableDeclarator.getVarId().getName() in PMD7 = ASTVariableDeclaratorId.getName in PMD6
         return variableDeclarator != null ? variableDeclarator.getName() : null;
     }
 
@@ -35,8 +31,8 @@ public class VariableUtils {
      * @param fieldDeclaration 字段声明节点
      * @return 字段名，如果有多个变量则返回第一个，如果无法获取则返回null
      */
-    public static String getVariableName(ASTFieldDeclaration fieldDeclaration) {
-        return getVariableName((JavaNode) fieldDeclaration);
+    public static String getVariableNameByASTFieldDeclaration(ASTFieldDeclaration fieldDeclaration) {
+        return getVariableNameByJavaNode(fieldDeclaration);
     }
 
     /**
@@ -45,8 +41,8 @@ public class VariableUtils {
      * @param localVarDecl 本地变量声明节点
      * @return 变量名，如果有多个变量则返回第一个，如果无法获取则返回null
      */
-    public static String getVariableName(ASTLocalVariableDeclaration localVarDecl) {
-        return getVariableName((JavaNode) localVarDecl);
+    public static String getVariableNameByASTLocalVariableDeclaration(ASTLocalVariableDeclaration localVarDecl) {
+        return getVariableNameByJavaNode(localVarDecl);
     }
 
     /**

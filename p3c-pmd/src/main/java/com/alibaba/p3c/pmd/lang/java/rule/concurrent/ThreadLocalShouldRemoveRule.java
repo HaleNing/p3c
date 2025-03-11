@@ -21,7 +21,9 @@ import com.alibaba.p3c.pmd.lang.java.rule.util.NodeUtils;
 import com.alibaba.p3c.pmd.lang.java.util.VariableUtils;
 import com.alibaba.p3c.pmd.lang.java.util.ViolationUtils;
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.*;
+import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
+import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
+import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclarator;
 import org.jaxen.JaxenException;
 
 import java.util.List;
@@ -75,7 +77,7 @@ public class ThreadLocalShouldRemoveRule extends AbstractAliRule {
 
     private void checkThreadLocal(ASTFieldDeclaration fieldDeclaration, ASTCompilationUnit node, Object data) {
         try {
-            String variableName = VariableUtils.getVariableName(fieldDeclaration);
+            String variableName = VariableUtils.getVariableNameByASTFieldDeclaration(fieldDeclaration);
             List<Node> nodes = node.findChildNodesWithXPath(String.format(XPATH_TPL,
                 variableName));
             if (nodes == null || nodes.isEmpty()) {

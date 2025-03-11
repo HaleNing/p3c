@@ -19,7 +19,9 @@ import com.alibaba.p3c.pmd.lang.java.rule.AbstractAliRule;
 import com.alibaba.p3c.pmd.lang.java.rule.util.NodeUtils;
 import com.alibaba.p3c.pmd.lang.java.util.VariableUtils;
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.*;
+import net.sourceforge.pmd.lang.java.ast.ASTExtendsList;
+import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
+import net.sourceforge.pmd.lang.java.ast.ASTMethodDeclaration;
 import org.jaxen.JaxenException;
 
 import java.util.List;
@@ -93,8 +95,8 @@ public class AvoidConcurrentCompetitionRandomRule extends AbstractAliRule {
         Object data) {
         for (ASTMethodDeclaration methodDeclaration : methodDeclarations) {
             try {
-                List<Node> nodes = methodDeclaration.findChildNodesWithXPath(String.format(XPATH_TPL,
-                    VariableUtils.getVariableName(fieldDeclaration)));
+                String variableNameByASTFieldDeclaration = VariableUtils.getVariableNameByASTFieldDeclaration(fieldDeclaration);
+                List<Node> nodes = methodDeclaration.findChildNodesWithXPath(String.format(XPATH_TPL, variableNameByASTFieldDeclaration));
                 if (nodes == null || nodes.isEmpty()) {
                     continue;
                 }

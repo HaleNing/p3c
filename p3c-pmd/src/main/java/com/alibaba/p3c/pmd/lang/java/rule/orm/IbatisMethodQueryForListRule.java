@@ -90,7 +90,7 @@ public class IbatisMethodQueryForListRule extends AbstractAliRule {
         for (Node node : fieldDeclarations) {
             ASTFieldDeclaration fieldDeclaration = (ASTFieldDeclaration)node;
             if (sqlMapClientField(fieldDeclaration)) {
-                set.add(VariableUtils.getVariableName(fieldDeclaration));
+                set.add(VariableUtils.getVariableNameByASTFieldDeclaration(fieldDeclaration));
             }
         }
         return set;

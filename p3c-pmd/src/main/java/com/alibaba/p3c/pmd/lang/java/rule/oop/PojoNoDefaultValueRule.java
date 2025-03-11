@@ -15,18 +15,17 @@
  */
 package com.alibaba.p3c.pmd.lang.java.rule.oop;
 
-import java.util.List;
-
 import com.alibaba.p3c.pmd.I18nResources;
 import com.alibaba.p3c.pmd.lang.java.rule.AbstractPojoRule;
 import com.alibaba.p3c.pmd.lang.java.util.VariableUtils;
 import com.alibaba.p3c.pmd.lang.java.util.ViolationUtils;
-
 import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableInitializer;
 import org.jaxen.JaxenException;
+
+import java.util.List;
 
 /**
  * [Mandatory] While defining POJO classes like DO, DTO, VO, etc., do not assign any default values to the members.
@@ -54,8 +53,7 @@ public class PojoNoDefaultValueRule extends AbstractPojoRule {
                     continue;
                 }
                 ViolationUtils.addViolationWithPrecisePosition(this, field, data,
-                    I18nResources.getMessage("java.oop.PojoNoDefaultValueRule.violation.msg",
-                        VariableUtils.getVariableName(field)));
+                        I18nResources.getMessage("java.oop.PojoNoDefaultValueRule.violation.msg", VariableUtils.getVariableNameByASTFieldDeclaration(field)));
             }
         } catch (JaxenException e) {
             throw new RuntimeException(e.getMessage(), e);

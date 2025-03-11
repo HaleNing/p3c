@@ -56,10 +56,9 @@ public class PojoMustUsePrimitiveFieldRule extends AbstractPojoRule {
                 }
                 JTypeMirror typeMirror = field.getTypeNode().getTypeMirror();
                 // TODO works only in current compilation file, by crossing files will be null
-                if (typeMirror != null && typeMirror.isPrimitive()) {
-                    addViolationWithMessage(data, field.getFirstDescendantOfType(ASTType.class),
-                        "java.oop.PojoMustUsePrimitiveFieldRule.violation.msg",
-                        new Object[] {VariableUtils.getVariableName(field)});
+                if (typeMirror.isPrimitive()) {
+                    addViolationWithMessage(data, field.descendants(ASTType.class).first(),
+                            "java.oop.PojoMustUsePrimitiveFieldRule.violation.msg", new Object[]{VariableUtils.getVariableNameByASTFieldDeclaration(field)});
                 }
             }
         } catch (JaxenException e) {

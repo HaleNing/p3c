@@ -15,34 +15,15 @@
  */
 package com.alibaba.p3c.pmd.lang.java.rule.comment;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
 import com.alibaba.p3c.pmd.I18nResources;
 import com.alibaba.p3c.pmd.lang.java.rule.util.NodeSortUtils;
-
 import com.alibaba.p3c.pmd.lang.java.util.VariableUtils;
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTAnnotation;
-import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceBodyDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
-import net.sourceforge.pmd.lang.java.ast.ASTConstructorDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTEnumDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTFormalParameter;
-import net.sourceforge.pmd.lang.java.ast.ASTMethodDeclaration;
-import net.sourceforge.pmd.lang.java.ast.AbstractJavaAccessNode;
-import net.sourceforge.pmd.lang.java.ast.AbstractJavaNode;
-import net.sourceforge.pmd.lang.java.ast.Comment;
-import net.sourceforge.pmd.lang.java.ast.MultiLineComment;
-import net.sourceforge.pmd.lang.java.ast.SingleLineComment;
-import net.sourceforge.pmd.lang.java.ast.Token;
+import net.sourceforge.pmd.lang.java.ast.*;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * [Mandatory] Javadoc should be used for classes, class variables and methods.
@@ -58,30 +39,30 @@ public class CommentsMustBeJavadocFormatRule extends AbstractAliCommentRule {
     @Override
     public Object visit(final ASTClassOrInterfaceDeclaration decl, Object data) {
         checkComment(decl, data, () -> I18nResources.getMessage(MESSAGE_KEY_PREFIX + ".class",
-            decl.getImage()));
+                decl.getImage()));
         return super.visit(decl, data);
     }
 
     @Override
     public Object visit(final ASTConstructorDeclaration decl, Object data) {
         checkComment(decl, data, () -> {
-            String constructorName = ((Token)decl.jjtGetFirstToken()).image;
+            String constructorName = ((Token) decl.jjtGetFirstToken()).image;
             if (decl.getFormalParameters().getParameterCount() == 0) {
                 return I18nResources.getMessage(MESSAGE_KEY_PREFIX + ".constructor.default",
-                    constructorName);
+                        constructorName);
             }
             List<ASTFormalParameter> formalParameters = decl.getFormalParameters()
-                .findChildrenOfType(ASTFormalParameter.class);
+                    .findChildrenOfType(ASTFormalParameter.class);
             List<String> strings = new ArrayList<>(formalParameters.size());
 
             for (ASTFormalParameter formalParameter : formalParameters) {
                 strings.add(formalParameter.jjtGetFirstToken().toString() + " "
-                    + formalParameter.jjtGetLastToken().toString());
+                        + formalParameter.jjtGetLastToken().toString());
             }
             return I18nResources
-                .getMessage(MESSAGE_KEY_PREFIX + ".constructor.parameter",
-                    constructorName,
-                    StringUtils.join(strings, ","));
+                    .getMessage(MESSAGE_KEY_PREFIX + ".constructor.parameter",
+                            constructorName,
+                            StringUtils.join(strings, ","));
         });
         return super.visit(decl, data);
     }
@@ -89,20 +70,22 @@ public class CommentsMustBeJavadocFormatRule extends AbstractAliCommentRule {
     @Override
     public Object visit(final ASTMethodDeclaration decl, Object data) {
         checkComment(decl, data, () -> I18nResources.getMessage(MESSAGE_KEY_PREFIX + ".method",
-            decl.getMethodName()));
+                decl.getMethodName()));
         return super.visit(decl, data);
     }
 
     @Override
     public Object visit(final ASTFieldDeclaration decl, Object data) {
-        checkComment(decl, data, () -> I18nResources.getMessage(MESSAGE_KEY_PREFIX + ".field", VariableUtils.getVariableName(decl)));
+        checkComment(
+                decl, data, () -> I18nResources.getMessage(MESSAGE_KEY_PREFIX + ".field", VariableUtils.getVariableNameByASTFieldDeclaration(decl))
+        );
         return super.visit(decl, data);
     }
 
     @Override
     public Object visit(final ASTEnumDeclaration decl, Object data) {
         checkComment(decl, data, () -> I18nResources.getMessage(MESSAGE_KEY_PREFIX + ".enum",
-            decl.getImage()));
+                decl.getImage()));
         return super.visit(decl, data);
     }
 
@@ -117,7 +100,7 @@ public class CommentsMustBeJavadocFormatRule extends AbstractAliCommentRule {
         Comment comment = decl.comment();
         if (comment instanceof SingleLineComment || comment instanceof MultiLineComment) {
             addViolationWithMessage(data, decl,
-                maker.make(), comment.getBeginLine(), comment.getEndLine());
+                    maker.make(), comment.getBeginLine(), comment.getEndLine());
         }
     }
 
@@ -132,7 +115,7 @@ public class CommentsMustBeJavadocFormatRule extends AbstractAliCommentRule {
             Node value = entry.getValue();
 
             if (value instanceof AbstractJavaNode) {
-                AbstractJavaNode node = (AbstractJavaNode)value;
+                AbstractJavaNode node = (AbstractJavaNode) value;
 
                 // skip annotation node, we will deal with it later.
                 if (node instanceof ASTAnnotation) {
@@ -147,7 +130,7 @@ public class CommentsMustBeJavadocFormatRule extends AbstractAliCommentRule {
 
                 lastNode = node;
             } else if (value instanceof Comment) {
-                lastComment = (Comment)value;
+                lastComment = (Comment) value;
             }
         }
     }
@@ -162,7 +145,7 @@ public class CommentsMustBeJavadocFormatRule extends AbstractAliCommentRule {
         NodeSortUtils.addNodesToSortedMap(itemsByLineNumber, annotations);
 
         List<ASTClassOrInterfaceDeclaration> classDecl =
-            cUnit.findDescendantsOfType(ASTClassOrInterfaceDeclaration.class);
+                cUnit.findDescendantsOfType(ASTClassOrInterfaceDeclaration.class);
         NodeSortUtils.addNodesToSortedMap(itemsByLineNumber, classDecl);
 
         List<ASTFieldDeclaration> fields = cUnit.findDescendantsOfType(ASTFieldDeclaration.class);
@@ -182,7 +165,7 @@ public class CommentsMustBeJavadocFormatRule extends AbstractAliCommentRule {
 
     private boolean isCommentOneLineBefore(SortedMap<Integer, Node> items, Comment lastComment, Node lastNode, Node node) {
         ASTClassOrInterfaceBodyDeclaration parentClass =
-            node.getFirstParentOfType(ASTClassOrInterfaceBodyDeclaration.class);
+                node.getFirstParentOfType(ASTClassOrInterfaceBodyDeclaration.class);
 
         // Skip comments inside inner class.
         if (parentClass != null && parentClass.isAnonymousInnerClass()) {
@@ -196,7 +179,7 @@ public class CommentsMustBeJavadocFormatRule extends AbstractAliCommentRule {
 
         // check if there is nothing in the middle except annotations.
         SortedMap<Integer, Node> subMap = items.subMap(NodeSortUtils.generateIndex(lastComment),
-            NodeSortUtils.generateIndex(node));
+                NodeSortUtils.generateIndex(node));
         Iterator<Entry<Integer, Node>> iter = subMap.entrySet().iterator();
 
         // skip the first comment node.
