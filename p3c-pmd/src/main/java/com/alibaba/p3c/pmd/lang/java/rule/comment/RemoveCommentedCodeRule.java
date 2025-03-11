@@ -1,6 +1,7 @@
 package com.alibaba.p3c.pmd.lang.java.rule.comment;
 
 import java.util.*;
+
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
@@ -49,6 +50,7 @@ public class RemoveCommentedCodeRule extends AbstractAliCommentRule {
 
             if (value instanceof JavaNode && Boolean.FALSE.equals(value instanceof JavaComment)) {
                 JavaNode node = (JavaNode) value;
+
                 // Add violation on the node after comment
                 if (lastComment != null && isCommentBefore(lastComment, node)) {
                     // Find code comment, but need to filter some cases
@@ -95,16 +97,17 @@ public class RemoveCommentedCodeRule extends AbstractAliCommentRule {
 
         // Add all nodes to the list
         for (Entry<Integer, Node> entry : nodesByLineNumber.entrySet()) {
-            sortedItems.add(new Object[]{entry.getKey(), entry.getValue()});
+            sortedItems.add(new Object[] { entry.getKey(), entry.getValue() });
         }
 
         // Add all comments to the list
         for (JavaComment comment : comments) {
-            sortedItems.add(new Object[]{comment.getReportLocation().getStartLine(), comment});
+            sortedItems.add(new Object[] { comment.getReportLocation().getStartLine(), comment });
         }
 
         // Sort the list by line number
         sortedItems.sort(Comparator.comparing(a -> ((Integer) a[0])));
+
         return sortedItems;
     }
 
@@ -118,6 +121,7 @@ public class RemoveCommentedCodeRule extends AbstractAliCommentRule {
     protected CommentPatternEnum scanCommentedCode(Chars content) {
         CommentPatternEnum pattern = CommentPatternEnum.NONE;
 
+        // Skip comment which contains pre tag
         if (PRE_TAG_PATTERN.matcher(content).matches()) {
             return pattern;
         }
@@ -145,10 +149,6 @@ public class RemoveCommentedCodeRule extends AbstractAliCommentRule {
         // Class declarations
         List<ASTClassDeclaration> classDecls = cUnit.descendants(ASTClassDeclaration.class).toList();
         NodeSortUtils.addNodesToSortedMap(itemsByLineNumber, classDecls);
-
-        // Interface declarations (using TypeDeclaration since PMD7 structure)
-        List<ASTTypeDeclaration> typeDecls = cUnit.descendants(ASTTypeDeclaration.class).toList();
-        NodeSortUtils.addNodesToSortedMap(itemsByLineNumber, typeDecls);
 
         // Field declarations
         List<ASTFieldDeclaration> fields = cUnit.descendants(ASTFieldDeclaration.class).toList();
