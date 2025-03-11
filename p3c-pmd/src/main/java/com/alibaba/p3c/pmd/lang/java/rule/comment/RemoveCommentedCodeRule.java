@@ -1,18 +1,3 @@
-/*
- * Copyright 1999-2017 Alibaba Group.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.p3c.pmd.lang.java.rule.comment;
 
 import java.util.List;
@@ -24,21 +9,19 @@ import java.util.regex.Pattern;
 import com.alibaba.p3c.pmd.lang.java.rule.util.NodeSortUtils;
 
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTBlockStatement;
-import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceDeclaration;
+
 import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
 import net.sourceforge.pmd.lang.java.ast.ASTConstructorDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTImportDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTMethodDeclaration;
-import net.sourceforge.pmd.lang.java.ast.Comment;
 import net.sourceforge.pmd.lang.java.ast.JavaNode;
 
 /**
  * [Recommended] Codes or configuration that is noticed to be obsoleted should be resolutely removed from projects.
  *
- * @author keriezhang
- * @date 2017/04/14
+ * @author XiNing.Liu
+ * @date 2025/03/11
  */
 public class RemoveCommentedCodeRule extends AbstractAliCommentRule {
 
@@ -51,8 +34,7 @@ public class RemoveCommentedCodeRule extends AbstractAliCommentRule {
 
     private static final Pattern FIELD_PATTERN = Pattern.compile(".*private\\s+(\\w*)\\s+(\\w*);.*", Pattern.DOTALL);
 
-    private static final Pattern METHOD_PATTERN = Pattern.compile(
-        ".*(public|protected|private)\\s+\\w+\\s+\\w+\\(.*\\)\\s+\\{.*", Pattern.DOTALL);
+    private static final Pattern METHOD_PATTERN = Pattern.compile(".*(public|protected|private)\\s+\\w+\\s+\\w+\\(.*\\)\\s+\\{.*", Pattern.DOTALL);
 
     /**
      * If string matches format ".xxx(.*);\n", then mark it as code.
@@ -62,7 +44,6 @@ public class RemoveCommentedCodeRule extends AbstractAliCommentRule {
     @Override
     public Object visit(ASTCompilationUnit cUnit, Object data) {
         checkCommentsBetweenDeclarations(cUnit, data);
-
         return super.visit(cUnit, data);
     }
 
@@ -145,7 +126,6 @@ public class RemoveCommentedCodeRule extends AbstractAliCommentRule {
         return pattern;
     }
 
-    @Override
     protected SortedMap<Integer, Node> orderedCommentsAndDeclarations(ASTCompilationUnit cUnit) {
         SortedMap<Integer, Node> itemsByLineNumber = new TreeMap<>();
 
