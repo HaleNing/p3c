@@ -25,6 +25,10 @@ public abstract class AbstractAliCommentRule extends AbstractJavaRule {
 
     public void addViolationWithMessage(Object data, JavaNode node, String message, Object[] args) {
         super.asCtx(data).addViolationWithMessage(node, String.format(I18nResources.getMessageWithExceptionHandled(message), args));
-
     }
+
+    public void addViolationWithMessage(Object data, JavaNode node, String message, int beginLine, int endLine) {
+        super.asCtx(data).addViolationWithPosition(node, beginLine, endLine, message);
+    }
+
 }

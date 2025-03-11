@@ -27,8 +27,8 @@ import java.util.regex.Pattern;
 /**
  * [Mandatory] Every class should include information of author(s) and date.
  *
- * @author keriezhang
- * @date 2016/12/14
+ * @author XiNing.Liu
+ * @date 2025/03/11
  */
 public class ClassMustHaveAuthorRule extends AbstractAliCommentRule {
 

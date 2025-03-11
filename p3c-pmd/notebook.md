@@ -1,7 +1,6 @@
 PMD如何调用p3c-pmd规则类的流程
 PMD调用p3c-pmd项目中规则类的完整链条如下：
 
-
 1. 规则加载阶段
    PMD启动并读取规则集XML文件（如rulesets/java/ali-set.xml）
    解析XML中的规则定义：
@@ -14,7 +13,6 @@ PMD调用p3c-pmd项目中规则类的完整链条如下：
    针对AST根节点ASTCompilationUnit开始规则检查
 3. 规则执行阶段
    通过继承链调用规则方法：
-
 
 AbstractJavaRule (PMD核心) - 提供基础规则框架
 AbstractAliRule - 增强了类型解析和国际化支持
@@ -32,6 +30,7 @@ public Object visit(ASTClassOrInterfaceDeclaration node, Object data) {
 List<Node> nodes = node.findChildNodesWithXPath(XPATH);
 // 检查是否违反规则
 }
+
 4. 违规报告阶段
    规则检测到违规时调用：
    addViolationWithMessage(data, blockItem,
@@ -52,19 +51,23 @@ visit 方法负责检测违规，addViolation 方法负责报告违规。
 visit 方法遍历 AST 并检测规则条件：
 
 当 PMD 规则引擎开始执行规则时，它会从 AST 的根节点开始，通过调用 visit 方法递归地遍历整个抽象语法树 (AST)。
-每个 visit 方法都对应于一种特定的 AST 节点类型（例如，ASTMethodDeclaration for method declarations, ASTIfStatement for if statements）。
-在 visit 方法内部，规则编写者会编写代码来 检查当前访问的 AST 节点是否满足规则定义的违规条件。 这通常涉及到访问节点的属性、检查节点的结构、或者进行一些逻辑判断。
+每个 visit 方法都对应于一种特定的 AST 节点类型（例如，ASTMethodDeclaration for method declarations, ASTIfStatement for if
+statements）。
+在 visit 方法内部，规则编写者会编写代码来 检查当前访问的 AST 节点是否满足规则定义的违规条件。
+这通常涉及到访问节点的属性、检查节点的结构、或者进行一些逻辑判断。
 visit 方法中发现违规时调用 addViolation：
 
 如果在 visit 方法的检查过程中，检测到当前 AST 节点违反了规则，那么 visit 方法就会 调用 addViolation 方法 来报告这个违规。
 addViolation 方法的作用是 记录违规信息，包括：
 违规节点 (Node): 指出 AST 中哪个节点违反了规则。
 违规消息 (Message): 描述违规的具体内容，通常会提供给用户查看。
-规则上下文数据 (Data - older PMD versions or implicitly via RuleContext): 一些额外的上下文信息，用于更详细地描述违规 (在新的 PMD 版本中，更多使用 RuleContext 来传递上下文)。
+规则上下文数据 (Data - older PMD versions or implicitly via RuleContext): 一些额外的上下文信息，用于更详细地描述违规 (在新的
+PMD 版本中，更多使用 RuleContext 来传递上下文)。
 addViolation 方法记录违规信息到 RuleContext：
 
 addViolation 方法本身 并不直接处理违规报告的输出或展示。 它的主要职责是将违规信息 添加到 RuleContext 对象 中。
-RuleContext 可以看作是一个 容器，用于 收集在规则执行过程中发现的所有违规信息。 每个规则执行上下文 (例如，检查一个文件) 都会有一个对应的 RuleContext 实例。
+RuleContext 可以看作是一个 容器，用于 收集在规则执行过程中发现的所有违规信息。 每个规则执行上下文 (例如，检查一个文件)
+都会有一个对应的 RuleContext 实例。
 规则引擎在遍历结束后处理 RuleContext 中的违规信息：
 
 当 PMD 规则引擎完成对整个 AST 的遍历后，它会 检查 RuleContext 对象，获取其中记录的所有违规信息。
@@ -88,24 +91,28 @@ return data;
 }
 在这个例子中：
 
-visit(ASTMethodDeclaration node, RuleContext ruleContext) 方法负责 遍历到每个方法声明节点 (ASTMethodDeclaration)，并 获取方法名。
+visit(ASTMethodDeclaration node, RuleContext ruleContext) 方法负责 遍历到每个方法声明节点 (ASTMethodDeclaration)，并
+获取方法名。
 if (methodName.length() > 30) 条件判断 方法名是否过长，如果过长，则认为违反了规则。
-ruleContext.addViolationWithMessage(node, message) 在检测到违规时被调用，将违规节点 (node) 和违规消息 (message) 添加到 ruleContext 中。
-最终的报告：  当 PMD 引擎遍历完所有代码文件后，会根据 RuleContext 中收集到的违规信息，生成报告，用户就可以看到类似这样的违规提示：
+ruleContext.addViolationWithMessage(node, message) 在检测到违规时被调用，将违规节点 (node) 和违规消息 (message) 添加到
+ruleContext 中。
+最终的报告： 当 PMD 引擎遍历完所有代码文件后，会根据 RuleContext 中收集到的违规信息，生成报告，用户就可以看到类似这样的违规提示：
 
-[文件: MyClass.java, 行号: 10] 方法名 'aVeryLongMethodNameThatExceedsThirtyCharacters' 过长，建议缩短到 30 个字符以内。 (LongMethodNameRule)
+[文件: MyClass.java, 行号: 10] 方法名 'aVeryLongMethodNameThatExceedsThirtyCharacters' 过长，建议缩短到 30 个字符以内。 (
+LongMethodNameRule)
 总结 visit 和 addViolation 的合作：
 
-功能组件	职责	工作时机	目的
-visit 方法	检测代码是否违反规则	PMD 规则引擎遍历 AST 时，访问到特定节点类型时	发现代码中潜在的规则违规
-addViolation 方法	报告检测到的违规	在 visit 方法中检测到违规后	将违规信息记录到 RuleContext，以便后续生成报告
+功能组件 职责 工作时机 目的
+visit 方法 检测代码是否违反规则 PMD 规则引擎遍历 AST 时，访问到特定节点类型时 发现代码中潜在的规则违规
+addViolation 方法 报告检测到的违规 在 visit 方法中检测到违规后 将违规信息记录到 RuleContext，以便后续生成报告
 
 Export to Sheets
 核心要点：
 
 visit 方法是 主动的，由 PMD 引擎驱动，遍历 AST 并执行规则逻辑。
 addViolation 方法是 被动的，由 visit 方法在检测到违规时 主动调用，用于报告违规。
-RuleContext 是 桥梁，连接 visit 方法和最终的违规报告。 visit 方法通过 addViolation 将违规信息放入 RuleContext，PMD 引擎从 RuleContext 中提取信息生成报告。
+RuleContext 是 桥梁，连接 visit 方法和最终的违规报告。 visit 方法通过 addViolation 将违规信息放入 RuleContext，PMD 引擎从
+RuleContext 中提取信息生成报告。
 理解 visit 和 addViolation 的协作关系，有助于你更好地编写 PMD 规则，有效地检测和报告代码中的问题。
 
 
@@ -114,6 +121,7 @@ RuleContext 是 桥梁，连接 visit 方法和最终的违规报告。 visit �
 AbstractAliRule 和 FixClassTypeResolver 修改的逻辑和思路：
 
 PMD 6.x 与 PMD 7.0 的架构差异及代码修改思路解析
+
 1. PMD 6.x 与 PMD 7.0 的核心架构差异
    PMD 6.x 架构特点
    访问者模式实现：使用 jjtAccept 进行节点访问
@@ -129,20 +137,16 @@ PMD 6.x 与 PMD 7.0 的架构差异及代码修改思路解析
 2. AbstractAliRule 修改思路解析
    原 AbstractAliRule 类中的主要问题：
 
-
 使用了已弃用的 jjtAccept 方法进行遍历
 尝试访问不再存在的 Report 对象
 无法正确获取文件名
 修改思路
 文件名获取：
 
-
 String sourceCodeFilename = node.getReportLocation().getFileId().getFileName();
 在 PMD 7.0 中，文件名不再通过 Report 获取，而是通过 ReportLocation 对象
 
-
 类型解析：
-
 
 private void resolveType(ASTCompilationUnit node, Object data) {
 // 首先尝试使用 AstInfo 中的符号表
@@ -155,17 +159,13 @@ if (astInfo != null) {
 }
 使用分层策略，优先使用 PMD 7.0 内置符号表，失败时降级至自定义解析
 
-
 使用反射：
-
 
 Object symbolTable = astInfo.getClass().getMethod("getSymbolTable").invoke(astInfo);
 通过反射实现更松散的耦合，提高代码对不同 PMD 版本的适应性
 
-
 3. FixClassTypeResolver 修改思路解析
    原 FixClassTypeResolver 类无法在 PMD 7.0 中使用，因为：
-
 
 继承的 ClassTypeResolver 类已不存在
 依赖的 jjtAccept 方法已移除
@@ -173,21 +173,16 @@ Object symbolTable = astInfo.getClass().getMethod("getSymbolTable").invoke(astIn
 修改思路
 移除继承关系：
 
-
 public class FixClassTypeResolver { // 不再继承 ClassTypeResolver
 由于父类在 PMD 7.0 中已经不存在
 
-
 直接使用新 API：
-
 
 JSymbolTable symbolTable = node.getSymbolTable();
 TypeSystem typeSystem = node.getTypeSystem();
 直接调用 PMD 7.0 提供的类型系统 API
 
-
 反射机制适配：
-
 
 Method resolveMethod = getResolveMethod(symbolTable.getClass());
 if (resolveMethod != null) {
@@ -195,30 +190,22 @@ resolveMethod.invoke(symbolTable);
 }
 使用反射查找并调用解析方法，增强兼容性
 
-
 错误处理与日志：
-
 
 LOG.log(Level.WARNING, "Type resolution failed: " + e.getMessage(), e);
 加强错误处理，便于问题定位
 
-
 4. 技术实现的深层考虑
    向后兼容性：使用反射和防御性编程，确保代码在 PMD 7.0 各次要版本间保持兼容
 
-
 隔离变化：将 PMD 版本变化隔离在 FixClassTypeResolver 中，减少对业务规则的影响
-
 
 性能考量：维持类型信息缓存机制 (TYPE_RESOLVER_MAP)，避免重复解析
 
-
 错误恢复：即使类型解析失败，规则检查仍然可以继续执行
-
 
 5. 修改的根本原因
    PMD 7.0 相比 6.x 进行了深度重构，几乎整个核心架构都发生了变化。我们的修改是为了：
-
 
 适应新架构：符合 PMD 7.0 的设计理念和 API
 保持功能等价：确保规则检查质量不受影响
@@ -230,40 +217,32 @@ LOG.log(Level.WARNING, "Type resolution failed: " + e.getMessage(), e);
 
 此代码通过四个关键步骤工作：
 
-
 动态查找方法：astInfo.getClass().getMethod("getSymbolTable") 通过反射查找 AstInfo 类的 getSymbolTable 方法
-
 
 调用获取符号表方法：.invoke(astInfo) 在 astInfo 实例上调用上一步找到的方法，获取符号表对象
 
-
 查找解析方法：symbolTable.getClass().getMethod("resolve") 查找符号表类的 resolve 方法
 
-
 触发符号表解析：.invoke(symbolTable) 调用解析方法，激活符号表的类型解析机制
-
 
 为什么使用反射实现
 使用反射的主要原因有：
 
-
 兼容性考虑：避免直接依赖特定版本的 PMD API，增强兼容性
-
 
 PMD 7.0 是大版本更新，API 可能在小版本间有所变动
 通过反射可以在不重新编译的情况下适应这些变化
 防御性编程：使用 try-catch 包装整个过程，确保即使符号表获取失败也不会中断规则检查
 
-
 在类型解析失败时提供清晰的错误信息
 允许降级到备选实现
 解耦合设计：减少对 PMD 内部实现的直接依赖
 
-
 PMD 的内部 API 可能会改变，但反射机制让代码更加稳定
 避免直接类型引用，降低编译时依赖
 与 PMD 7.0 架构变化的关系
-PMD 7.0 引入的 AstInfo 和 JSymbolTable 表示语法树元数据和符号信息，这段代码正是为了适应这一架构变化。在 PMD 6.x 中，类型解析通常通过 ClassTypeResolver 完成，而 PMD 7.0 将这一职责移交给了符号表系统。
+PMD 7.0 引入的 AstInfo 和 JSymbolTable 表示语法树元数据和符号信息，这段代码正是为了适应这一架构变化。在 PMD 6.x 中，类型解析通常通过
+ClassTypeResolver 完成，而 PMD 7.0 将这一职责移交给了符号表系统。
 
 通过反射触发符号表的解析机制，这段代码在不直接依赖新 API 的情况下实现了与 PMD 7.0 类型系统的对接，为规则检查提供了必要的类型信息。
 
@@ -274,37 +253,28 @@ PMD 工作流程中的位置
 规则检查 → 识别违规
 生成报告 → 输出结果
 
-
 这段代码在 PMD 工作原理中完成了以下核心任务：
-
 
 符号表延迟加载触发：PMD 7.0 使用懒加载方式处理符号表，调用 resolve() 方法触发真正的符号解析
 
-
 类型信息构建：激活符号表后，PMD 会建立：
-
 
 变量定义和引用之间的映射
 方法调用和定义之间的��接
 类型继承和实现关系���解析
 作用域信息：确定变量的可见性和有效范围，这对于许多规则检查至关重要
 
-
 对规则检查的重要性
 这段代码对规则检查至关重要，因为：
 
-
 类型依赖规则：许多规则需要类型信息才能正常工作，如：
-
 
 接口与实现检查规则
 类型转换安全性规则
 泛型使用规则
 引用关系：确定变量、方法引用的正确性，是检查未使用代码、冗余代码的基础
 
-
 准确性保障：如果没有这一��，许多依赖类型信息的规则将无法正常工作或产生误报
-
 
 在 PMD 6.x 中，这一步是通过 ClassTypeResolver 自动完成的，而在 PMD 7.0 中需要我们主动触发符号表的解析过程。这段反射代码正是确保了这一关键步骤在新架构下仍然能够正确执行。
 
@@ -715,3 +685,147 @@ ASTMethodCall: 当你需要分析 方法的使用情况 时，例如检查特定
 ASTMethodCall 节点。
 理解 ASTMethodDeclaration 和 ASTMethodCall 的区别是进行 Java 代码静态分析的基础，尤其是在开发 PMD
 规则时，能够帮助你更精确地定位和分析代码中的方法定义和方法调用。
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+在 PMD 7 中，JavadocComment 节点中的 "token" 指的是构成 Javadoc 注释的 词法单元 (lexical units)。
+为了更好地理解这个概念，我们需要从词法分析和解析的层面来解释。
+
+1. 词法分析 (Lexical Analysis) 和 Token 的概念:
+
+在编译器和静态分析工具 (如 PMD) 的处理流程中，第一步通常是 词法分析 (Lexical Analysis) 或 扫描 (Scanning)。 词法分析器的作用是将
+源代码的字符流 分解成一个个有意义的 词法单元 (tokens)。
+
+字符流 (Character Stream): 源代码本质上就是一个由字符组成的连续序列。
+词法单元 (Tokens): Token 是源代码中 最小的、具有独立含义的语法单元。 例如，在 Java 代码中，常见的 token 类型包括：
+关键字 (Keywords): public, class, int, if, for, return 等。
+标识符 (Identifiers): 变量名、方法名、类名等，例如 count, getName, MyClass。
+字面量 (Literals): 数值字面量 (10, 3.14), 字符串字面量 ("Hello", "world"), 布尔字面量 (true, false), 字符字面量 ('a', '
+b')。
+运算符 (Operators): +, -, *, /, =, ==, !=, <, >, &&, ||, !, . 等。
+分隔符 (Punctuators): (, ), {, }, [, ], ;, ,, : 等。
+注释 (Comments): // 行注释, /* ... */ 块注释, /** ... */ Javadoc 注释。
+空白符 (Whitespace): 空格, 制表符, 换行符 (通常在词法分析阶段会被忽略，但在某些情况下也可能作为 token 处理)。
+词法分析器的任务就是识别源代码中的各种 token，并为每个 token 分配一个类型和值 (如果有的话)。 例如，对于 Java 代码 int
+count = 10;, 词法分析器可能会生成如下的 token 序列：
+
+[TOKEN_KEYWORD: "int"]  [TOKEN_IDENTIFIER: "count"]  [TOKEN_OPERATOR: "="]  更多的参考JavaTokenKinds class
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ASTReceiverParameter 和 ASTFormalParameter，并通过例子来帮助您理解它们之间的区别。
+
+1. ASTFormalParameter (形式参数)
+
+含义: ASTFormalParameter 代表 Java 中 方法或构造器的形式参数 (formal parameter)。 形式参数是在方法或构造器声明中定义的参数，用于接收调用者传递的实际参数值。
+
+常见且基础:  ASTFormalParameter 是非常常见和基础的 AST 节点类型，因为几乎所有方法和构造器都会有形式参数（即使参数列表为空）。
+
+例子:  考虑以下 Java 方法声明：
+
+Java
+
+public class Example {
+public int add(int a, int b) { // a 和 b 是形式参数
+return a + b;
+}
+
+    public Example(String name) { // name 是构造器的形式参数
+        System.out.println("Hello, " + name);
+    }
+
+    public void printMessage() { // 没有形式参数 (参数列表为空)
+        System.out.println("Default message");
+    }
+
+}
+在上面的例子中：
+
+方法 add 的形式参数是 int a 和 int b。 PMD AST 会为 a 和 b 各创建一个 ASTFormalParameter 节点。
+构造器 Example(String name) 的形式参数是 String name。 PMD AST 会为 name 创建一个 ASTFormalParameter 节点。
+方法 printMessage() 没有形式参数，因此在它的 AST 结构中不会有 ASTFormalParameter 节点。
+ASTFormalParameter 节点包含的信息:  一个 ASTFormalParameter 节点通常会包含以下信息：
+
+修饰符 (Modifiers): 参数的修饰符，例如 final, 注解等 (通过 ASTModifiers 节点表示)。
+类型 (Type): 参数的类型 (通过 ASTType 节点表示)，例如 int, String, List<String> 等。
+变量声明符 ID (VariableDeclaratorId): 参数的名称 (通过 ASTVariableDeclaratorId 节点表示，在 PMD 7 中可能是
+ASTVariableDeclarator 节点的 getImage() 方法)。
+PMD 规则中的使用场景:  在 PMD 规则中，你可能会使用 ASTFormalParameter 来：
+
+检查方法的参数数量是否过多 (例如，超过某个阈值)。
+检查参数是否使用了特定的修饰符 (例如，要求所有参数都应该是 final 的)。
+检查参数类型是否符合规范 (例如，避免使用基本数据类型，推荐使用包装类型)。
+分析参数的命名风格 (例如，检查参数名是否具有描述性)。
+
+2. ASTReceiverParameter (接收者参数)
+
+含义: ASTReceiverParameter 代表 Java 8 引入的 接收者参数 (receiver parameter)。 接收者参数是一种 显式声明 this 引用
+的语法，只能用于 实例方法 (instance methods) 和 内部类的构造器。
+
+Java 8 新特性，相对少见:  接收者参数是 Java 8 的新特性，在实际代码中相对较少使用。 它主要是为了在某些特定场景下，例如在注解处理器或反射代码中，能够
+显式地引用和操作 this 引用。 在通常的 Java 编程中，我们很少需要显式声明接收者参数，因为 this 引用是隐式可用的。
+
+例子:  以下是一个使用接收者参数的 Java 方法声明的例子：
+
+Java
+
+public class ReceiverParameterExample {
+public void processData(ReceiverParameterExample this, String data) { // ReceiverParameterExample this 是接收者参数
+System.out.println("Processing data for: " + this.toString() + ", data: " + data);
+}
+}
+在这个例子中，ReceiverParameterExample this 就是一个 接收者参数。 它显式地声明了一个名为 this 的参数，类型为
+ReceiverParameterExample。 这个 this 参数实际上就代表了 方法被调用的对象实例，与隐式的 this 引用是相同的。
+
+ASTReceiverParameter 节点包含的信息:  一个 ASTReceiverParameter 节点通常会包含以下信息：
+
+修饰符 (Modifiers): 接收者参数的修饰符，例如注解等 (通过 ASTModifiers 节点表示)。 接收者参数可以有注解，例如 @NonNull
+ReceiverParameterExample this。
+类型 (Type): 接收者参数的类型，也就是声明方法的类或接口的类型 (通过 ASTType 节点表示)。 在上面的例子中，类型是
+ReceiverParameterExample。
+名称 (Name): 接收者参数的名称，必须是 this (通过 ASTIdentifier 节点表示)。 接收者参数的名称 固定为 this，不能更改。
+PMD 规则中的使用场景:  在 PMD 规则中，你可能会使用 ASTReceiverParameter 来：
+
+检查是否使用了接收者参数 (例如，禁止或强制使用接收者参数，根据项目规范)。
+检查接收者参数上是否使用了特定的注解 (例如，要求接收者参数必须使用 @NonNull 注解)。
+虽然使用场景相对较少，但在某些特定的代码风格检查或高级分析场景下，ASTReceiverParameter 节点可能会有用。
+
+3. ASTFormalParameter 和 ASTReceiverParameter 的关键区别总结:
+
+特性 ASTFormalParameter (形式参数)    ASTReceiverParameter (接收者参数)
+代表 方法/构造器的 普通参数 方法的 this 引用 的显式声明
+用途 接收方法/构造器调用者传递的 实际参数值 显式地 引用和操作方法被调用的 对象实例 (this)
+Java 版本 Java 1.0 就有，非常基础 Java 8 引入的新特性，相对较新
+常见程度 非常常见，几乎每个方法/构造器都可能使用 相对少见，通常只在特定高级场景下使用
+出现位置 方法声明的参数列表, 构造器声明的参数列表 实例方法声明的参数列表 (第一个参数), 内部类构造器的参数列表 (
+第一个参数)
+名称 可以是任意合法的标识符 (例如 a, b, name, count)    必须固定为 this
+类型 可以是任何合法的 Java 类型 (例如 int, String, List<T>)    必须是 声明方法的类或接口的类型
+规则使用场景 参数数量检查, 参数修饰符检查, 参数类型检查, 参数命名风格检查等 检查是否使用接收者参数,
+接收者参数注解检查等 (较少使用场景)
+
+Export to Sheets
+代码示例对比:
+
+ASTFormalParameter 示例 (常见):
+
+Java
+
+public class FormalParameterExample {
+public int calculateArea(int length, int width) { // length 和 width 是 ASTFormalParameter
+return length * width;
+}
+}
+ASTReceiverParameter 示例 (少见):
+
+Java
+
+public class ReceiverParameterExample {
+public void printDetails(ReceiverParameterExample this) { // ReceiverParameterExample this 是 ASTReceiverParameter
+System.out.println("Details of: " + this.toString());
+}
+}
+总结:
+
+ASTFormalParameter 代表方法和构造器中常见的 形式参数，用于接收调用者传递的参数值。 你在编写 PMD 规则时，更频繁地会遇到和使用
+ASTFormalParameter。
+ASTReceiverParameter 代表 Java 8 引入的 接收者参数，用于显式声明 this 引用。 它是一种更高级和少见的语法特性，在特定的代码分析场景下可能会用到。
+理解它们之间的区别，可以帮助你更准确地分析和处理 Java 代码中的方法和参数声明，并编写更精确的 PMD 规则。 希望这些解释和例子能够帮助您更好地理解
+ASTReceiverParameter 和 ASTFormalParameter。
