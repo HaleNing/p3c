@@ -12,7 +12,8 @@ import java.util.regex.Pattern;
 /**
  * [Mandatory] Abstract methods (including methods in interface) should be commented by Javadoc.
  * Javadoc should include method instruction, description of parameters, return values and possible exception.
- *
+ * @author XiNing.Liu
+ * @date 2025/03/11
  */
 public class AbstractMethodOrInterfaceMethodMustUseJavadocRule extends AbstractAliCommentRule {
 

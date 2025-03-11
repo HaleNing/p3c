@@ -1,93 +1,83 @@
-/*
- * Copyright 1999-2017 Alibaba Group.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.p3c.pmd.lang.java.rule.comment;
-
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.alibaba.p3c.pmd.I18nResources;
 import com.alibaba.p3c.pmd.lang.java.rule.util.NodeSortUtils;
-
+import com.alibaba.p3c.pmd.lang.java.util.ViolationUtils;
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
-import net.sourceforge.pmd.lang.java.ast.ASTEnumConstant;
-import net.sourceforge.pmd.lang.java.ast.ASTExpression;
-import net.sourceforge.pmd.lang.java.ast.ASTFieldDeclaration;
-import net.sourceforge.pmd.lang.java.ast.AbstractJavaNode;
-import net.sourceforge.pmd.lang.java.ast.Comment;
+import net.sourceforge.pmd.lang.document.FileLocation;
+import net.sourceforge.pmd.lang.java.ast.*;
+
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * [Mandatory] Single line comments in a method should be put above the code to be commented, by using // and
  * multiple lines by using \/* *\/. Alignment for comments should be noticed carefully.
  *
- * @author keriezhang
- * @date 2016/12/14
+ * @author XiNing.Liu
+ * @date 2025/03/11
  */
 public class AvoidCommentBehindStatementRule extends AbstractAliCommentRule {
 
     @Override
-    public Object visit(ASTCompilationUnit cUnit, Object data) {
-        SortedMap<Integer, Node> itemsByLineNumber = orderedCommentsAndExpressions(cUnit);
-        AbstractJavaNode lastNode = null;
+    public Object visit(ASTCompilationUnit rootUnit, Object data) {
+        SortedMap<Integer, Node> itemsByLineNumber = orderedCommentsAndExpressions(rootUnit);
+        List<JavaComment> rootUnitComments = rootUnit.getComments();
 
+        // Group comments by line number for faster lookup
+        Map<Integer, List<JavaComment>> commentsByLine = new HashMap<>();
+        for (JavaComment comment : rootUnitComments) {
+            int line = comment.getReportLocation().getStartLine();
+            commentsByLine.computeIfAbsent(line, k -> new ArrayList<>()).add(comment);
+        }
+
+        // Process each node, only checking comments on the same line
         for (Entry<Integer, Node> entry : itemsByLineNumber.entrySet()) {
-            Node value = entry.getValue();
-            if (value instanceof AbstractJavaNode) {
-                lastNode = (AbstractJavaNode)value;
-            } else if (value instanceof Comment) {
-                Comment comment = (Comment)value;
-                if (lastNode != null && (comment.getBeginLine() == lastNode.getBeginLine())
-                    && (comment.getEndColumn() > lastNode.getBeginColumn())) {
-                    addViolationWithMessage(data, lastNode,
-                        I18nResources.getMessage("java.comment.AvoidCommentBehindStatementRule.violation.msg"),
-                        comment.getBeginLine(), comment.getEndLine());
+            Node node = entry.getValue();
+            if (node instanceof JavaNode) {
+                JavaNode javaNode = (JavaNode) node;
+                FileLocation nodeLoc = javaNode.getReportLocation();
+                int nodeLine = nodeLoc.getStartLine();
+                int nodeColumn = nodeLoc.getStartColumn();
+
+                // Only check comments on the same line
+                List<JavaComment> sameLineComments = commentsByLine.get(nodeLine);
+                if (sameLineComments != null) {
+                    for (JavaComment comment : sameLineComments) {
+                        if (comment.getReportLocation().getStartColumn() > nodeColumn) {
+                            ViolationUtils.addViolationWithPrecisePosition(this, javaNode, data,
+                                    I18nResources.getMessage("java.comment.AvoidCommentBehindStatementRule.violation.msg"));
+                            break;
+                        }
+                    }
                 }
             }
         }
 
-        return super.visit(cUnit, data);
+        return super.visit(rootUnit, data);
     }
-
     /**
      * Check comments behind nodes.
      *
-     * @param cUnit compilation unit
+     * @param rootUnit compilation unit
      * @return sorted comments and expressions
      */
-    protected SortedMap<Integer, Node> orderedCommentsAndExpressions(ASTCompilationUnit cUnit) {
+    protected SortedMap<Integer, Node> orderedCommentsAndExpressions(ASTCompilationUnit rootUnit) {
 
         SortedMap<Integer, Node> itemsByLineNumber = new TreeMap<>();
 
         // expression nodes
-        List<ASTExpression> expressionNodes = cUnit.findDescendantsOfType(ASTExpression.class);
+        List<ASTExpression> expressionNodes = rootUnit.descendants(ASTExpression.class).toList();
         NodeSortUtils.addNodesToSortedMap(itemsByLineNumber, expressionNodes);
 
         // filed declaration nodes
-        List<ASTFieldDeclaration> fieldNodes =
-            cUnit.findDescendantsOfType(ASTFieldDeclaration.class);
+        List<ASTFieldDeclaration> fieldNodes = rootUnit.descendants(ASTFieldDeclaration.class).toList();
         NodeSortUtils.addNodesToSortedMap(itemsByLineNumber, fieldNodes);
 
         // enum constant nodes
-        List<ASTEnumConstant> enumConstantNodes =
-            cUnit.findDescendantsOfType(ASTEnumConstant.class);
+        List<ASTEnumConstant> enumConstantNodes = rootUnit.descendants(ASTEnumConstant.class).toList();
         NodeSortUtils.addNodesToSortedMap(itemsByLineNumber, enumConstantNodes);
 
-        NodeSortUtils.addNodesToSortedMap(itemsByLineNumber, cUnit.getComments());
 
         return itemsByLineNumber;
     }
