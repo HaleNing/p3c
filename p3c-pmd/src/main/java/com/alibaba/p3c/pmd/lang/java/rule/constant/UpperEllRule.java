@@ -20,7 +20,6 @@ public class UpperEllRule extends AbstractAliRule {
     public Object visit(ASTNumericLiteral node, Object data) {
         boolean isLongValue = node.isLongLiteral();
         Chars text = node.getText();
-        long valueAsLong = node.getValueAsLong();
         // if it is an integer and ends with l, collects the current violation code
         if (isLongValue && text.endsWith(LOWERCASE_L)) {
             addViolationWithMessage(data, node, "java.constant.UpperEllRule.violation.msg",
