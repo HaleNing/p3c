@@ -1,35 +1,20 @@
-/*
- * Copyright 1999-2017 Alibaba Group.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.p3c.pmd.lang.java.rule.constant;
 
 import com.alibaba.p3c.pmd.lang.java.rule.AbstractAliRule;
 import com.alibaba.p3c.pmd.lang.java.util.namelist.NameListConfig;
-import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.lang.document.Chars;
 import net.sourceforge.pmd.lang.java.ast.*;
 import org.apache.commons.lang3.StringUtils;
-import org.jaxen.JaxenException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * [Mandatory] Magic values, except for predefined, are forbidden in coding.
  *
- * @author shengfang.gsf
- * @date 2016/12/13
+ * @author XiNing.Liu
+ * @date 2025/03/12
  */
 public class UndefineMagicConstantRule extends AbstractAliRule {
 
@@ -37,9 +22,7 @@ public class UndefineMagicConstantRule extends AbstractAliRule {
      * white list for undefined variable, may be added
      */
     private final static List<String> LITERAL_WHITE_LIST = NameListConfig.NAME_LIST_SERVICE.getNameList(
-        UndefineMagicConstantRule.class.getSimpleName(), "LITERAL_WHITE_LIST");
-
-    private final static String XPATH = "//Literal/../../../../..[not(VariableInitializer)]";
+            UndefineMagicConstantRule.class.getSimpleName(), "LITERAL_WHITE_LIST");
 
     /**
      * An undefined that belongs to non-looped if statements
@@ -49,27 +32,34 @@ public class UndefineMagicConstantRule extends AbstractAliRule {
      */
     @Override
     public Object visit(ASTCompilationUnit compilationUnitNode, Object data) {
-        // removed repeat magic value , to prevent the parent class to find sub-variable nodes when there is a repeat
-        List<ASTLiteral> currentLiterals = new ArrayList<ASTLiteral>();
-        try {
-            // Find the parent node of the undefined variable
-            List<Node> parentNodes = compilationUnitNode.findChildNodesWithXPath(XPATH);
+        // removed repeat magic value, to prevent the parent class to find sub-variable nodes when there is a repeat
+        List<ASTLiteral> currentLiterals = new ArrayList<>();
 
-            for (Node parentItem : parentNodes) {
-                List<ASTLiteral> literals = parentItem.findDescendantsOfType(ASTLiteral.class);
-                for (ASTLiteral literal : literals) {
+        // Find literals that are not part of variable initializers
+        compilationUnitNode.descendants(ASTLiteral.class)
+                .filter(literal -> Boolean.FALSE.equals(isInVariableInitializer(literal)))
+                .forEach(literal -> {
                     if (inBlackList(literal) && !currentLiterals.contains(literal)) {
                         currentLiterals.add(literal);
                         String imageReplace = StringUtils.replace(literal.getImage(), "{", "'{");
-                        addViolationWithMessage(data, literal,
-                            "java.constant.UndefineMagicConstantRule.violation.msg", new Object[] {imageReplace});
+                        addViolationWithMessage(data, literal, "java.constant.UndefineMagicConstantRule.violation.msg", new Object[]{imageReplace});
                     }
-                }
-            }
-        } catch (JaxenException e) {
-            e.printStackTrace();
-        }
+                });
+
         return super.visit(compilationUnitNode, data);
+    }
+
+    /**
+     * Check if the literal is part of a variable initializer
+     *  like an int threshold = 30;
+     */
+    private boolean isInVariableInitializer(ASTLiteral literal) {
+        ASTVariableDeclarator astVariableDeclarator = literal.ancestors(ASTVariableDeclarator.class).first();
+        if (astVariableDeclarator != null) {
+            ASTExpression initializer = astVariableDeclarator.getInitializer();
+            return initializer != null && initializer.getBeginLine() == literal.getBeginLine();
+        }
+        return false;
     }
 
     /**
@@ -79,33 +69,42 @@ public class UndefineMagicConstantRule extends AbstractAliRule {
      * @return
      */
     private boolean inBlackList(ASTLiteral literal) {
-        String name = literal.getImage();
+        Chars literalText = literal.getLiteralText();
+
         int lineNum = literal.getBeginLine();
         // name is null,bool literal，belongs to white list
-        if (name == null) {
+        if (Objects.isNull(literalText)) {
             return false;
         }
         // filter white list
         for (String whiteItem : LITERAL_WHITE_LIST) {
-            if (whiteItem.equals(name)) {
+            if (whiteItem.equals(literalText.toString())) {
                 return false;
             }
         }
-        ASTIfStatement ifStatement = literal.getFirstParentOfType(ASTIfStatement.class);
+
+        // Check if the magic literal is in an if statement
+        ASTIfStatement ifStatement = literal.ancestors(ASTIfStatement.class).first();
         if (ifStatement != null && lineNum == ifStatement.getBeginLine()) {
-            ASTForStatement forStatement = ifStatement.getFirstParentOfType(ASTForStatement.class);
-            ASTWhileStatement whileStatement = ifStatement.getFirstParentOfType(ASTWhileStatement.class);
-            return forStatement == null && whileStatement == null;
+            // Check if the if statement is inside a loop
+            boolean inLoop = Objects.nonNull(ifStatement.ancestors(ASTForStatement.class).first()) ||
+                    Objects.nonNull(ifStatement.ancestors(ASTWhileStatement.class).first());
+
+            return Boolean.FALSE.equals(inLoop);
         }
 
-        // judge magic value belongs to  for statement 
-        ASTForStatement blackForStatement = literal.getFirstParentOfType(ASTForStatement.class);
+        // judge magic value belongs to for statement
+        ASTForStatement blackForStatement = literal.ancestors(ASTForStatement.class).first();
         if (blackForStatement != null && lineNum == blackForStatement.getBeginLine()) {
             return true;
         }
 
         // judge magic value belongs to while statement
-        ASTWhileStatement blackWhileStatement = literal.getFirstParentOfType(ASTWhileStatement.class);
-        return blackWhileStatement != null && lineNum == blackWhileStatement.getBeginLine();
+        ASTWhileStatement blackWhileStatement = literal.ancestors(ASTWhileStatement.class).first();
+        ASTForStatement blackForloopStatement = literal.ancestors(ASTForStatement.class).first();
+
+        return (blackWhileStatement != null && lineNum == blackWhileStatement.getBeginLine()) ||
+                (blackForloopStatement != null && lineNum == blackForloopStatement.getBeginLine());
+
     }
 }

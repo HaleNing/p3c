@@ -59,11 +59,11 @@ public abstract class AbstractAliRule extends AbstractJavaRule {
 
 
     public void addViolationWithMessage(Object data, JavaNode node, String message) {
-        ((RuleContext) data).addViolationWithMessage(node, I18nResources.getMessageWithExceptionHandled(message));
+        super.asCtx(data).addViolationWithMessage(node, I18nResources.getMessageWithExceptionHandled(message));
     }
 
     public void addViolationWithMessage(Object data, JavaNode node, String message, Object[] args) {
-        ((RuleContext) data).addViolationWithMessage(node, String.format(I18nResources.getMessageWithExceptionHandled(message), args));
+        super.asCtx(data).addViolationWithMessage(node, I18nResources.getMessageWithExceptionHandled(message), args);
     }
 
 
