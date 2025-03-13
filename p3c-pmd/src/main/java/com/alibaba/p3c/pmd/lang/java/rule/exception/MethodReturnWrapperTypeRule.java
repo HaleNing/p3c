@@ -27,12 +27,6 @@ public class MethodReturnWrapperTypeRule extends AbstractAliRule {
     @Override
     public Object visit(ASTMethodDeclaration methodNode, Object data) {
 
-        /*
-          public static int getNumberWrapper() {
-        Integer number = null; // 故意将 Integer 设置为 null
-        return number; // 尝试返回 null 的 Integer 给 int 返回类型，这里会触发自动拆箱
-               }
-         */
         // Find the primitive return type
         ASTPrimitiveType primitiveTypeOptional = methodNode.descendants(ASTType.class)
                 .flatMap(type -> type.descendants(ASTPrimitiveType.class))
