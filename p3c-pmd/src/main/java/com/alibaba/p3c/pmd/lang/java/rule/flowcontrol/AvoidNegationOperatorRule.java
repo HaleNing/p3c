@@ -15,8 +15,6 @@ import net.sourceforge.pmd.lang.java.rule.AbstractJavaRule;
  * @author XiNing.Liu
  * @date 2025/03/16
  */
-
-
 public class AvoidNegationOperatorRule extends AbstractJavaRule {
 
     @Override
