@@ -1,3 +1,10 @@
+# <font color="green">The reason of Fork</font>
+
+Because the Alibaba development team has stopped maintaining the P3C project, PMD-P3C remains at PMD V6 version.
+
+PMD V7 has been released. The goal of this project is to upgrade the compatible PMD-P3C project to adapt it to the API and features of PMD V7.
+
+
 # P3C-PMD
 
 ## <font color="green">Build requirements</font>
