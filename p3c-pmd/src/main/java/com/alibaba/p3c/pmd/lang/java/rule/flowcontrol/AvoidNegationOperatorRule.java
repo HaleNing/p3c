@@ -1,46 +1,57 @@
-/*
- * Copyright 1999-2017 Alibaba Group.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
 package com.alibaba.p3c.pmd.lang.java.rule.flowcontrol;
 
-import com.alibaba.p3c.pmd.lang.AbstractXpathRule;
+import com.alibaba.p3c.pmd.I18nResources;
 import com.alibaba.p3c.pmd.lang.java.util.ViolationUtils;
+import net.sourceforge.pmd.lang.java.ast.*;
 
-import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.lang.java.rule.AbstractJavaRule;
 
 /**
- * [Recommended] Avoid using the negation operator '!'.
- * Note: The negation operator is not easy to be quickly understood. There must be a positive
+ * [Recommended]Avoid using the negation operator '!'.
+ * Note: The negation operator is not easy to be quickly understood. There must be a positive
  * way to represent the same logic.
  *
- * @author zenghou.fw
- * @date 2017/11/21
+ * @author XiNing.Liu
+ * @date 2025/03/16
  */
-public class AvoidNegationOperatorRule extends AbstractXpathRule {
-    private static final String XPATH = "//UnaryExpressionNotPlusMinus[child::PrimaryExpression"
-        + "//PrimaryPrefix/Expression/RelationalExpression]"
-        + "|//UnaryExpressionNotPlusMinus[child::PrimaryExpression"
-        + "//PrimaryPrefix/Expression/EqualityExpression]";
 
-    public AvoidNegationOperatorRule() {
-        setXPath(XPATH);
+
+public class AvoidNegationOperatorRule extends AbstractJavaRule {
+
+    @Override
+    public Object visit(ASTIfStatement node, Object data) {
+        Boolean isHave = checkOperator(node);
+        if (isHave) {
+            ViolationUtils.addViolationWithPrecisePosition(this, node, data,
+                    I18nResources.getMessage("java.flowcontrol.AvoidNegationOperatorRule.violation.msg"));
+        }
+        return super.visit(node, data);
+
     }
 
     @Override
-    public void addViolation(Object data, Node node, String arg) {
-        ViolationUtils.addViolationWithPrecisePosition(this, node, data,
-            "java.flowcontrol.AvoidNegationOperatorRule.violation.msg");
+    public Object visit(ASTWhileStatement node, Object data) {
+        Boolean isHave = checkOperator(node);
+        if (isHave) {
+            ViolationUtils.addViolationWithPrecisePosition(this, node, data,
+                    I18nResources.getMessage("java.flowcontrol.AvoidNegationOperatorRule.violation.msg"));
+        }
+        return super.visit(node, data);
+
     }
+
+
+    private Boolean checkOperator(JavaNode condition) {
+        int neCount = condition.descendants(ASTUnaryExpression.class).filter(item -> {
+            return UnaryOp.NEGATION.equals(item.getOperator());
+        }).count();
+        int neqCount = condition.descendants(ASTInfixExpression.class).filter(item -> {
+            return BinaryOp.NE.equals(item.getOperator());
+        }).count();
+
+
+        return neqCount > 0 || neCount > 0;
+    }
+
 }
