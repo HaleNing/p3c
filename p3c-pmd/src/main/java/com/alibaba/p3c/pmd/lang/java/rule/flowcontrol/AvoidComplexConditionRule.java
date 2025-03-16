@@ -1,45 +1,56 @@
-/*
- * Copyright 1999-2017 Alibaba Group.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.p3c.pmd.lang.java.rule.flowcontrol;
 
-import com.alibaba.p3c.pmd.lang.AbstractXpathRule;
+import com.alibaba.p3c.pmd.I18nResources;
 import com.alibaba.p3c.pmd.lang.java.util.ViolationUtils;
 
-import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.lang.java.ast.*;
+import net.sourceforge.pmd.lang.java.rule.AbstractJavaRule;
+
+import java.util.List;
 
 /**
  * [Mandatory] Do not use complicated statements in conditional statements (except for frequently used methods
  * like getXxx/isXxx). Use boolean variables to store results of complicated statements temporarily will increase
  * the code's readability.
  *
- * @author zenghou.fw
- * @date 2017/04/11
+ * @author XiNing.Liu
+ * @date 2025/03/16
  */
-public class AvoidComplexConditionRule extends AbstractXpathRule {
-    private static final String XPATH = "(//IfStatement/Expression"
-        + "|//ConditionalExpression[@Ternary = 'true']/PrimaryExpression)"
-        + "[count(.//ConditionalAndExpression) + count(.//ConditionalOrExpression) > 1]";
+public class AvoidComplexConditionRule extends AbstractJavaRule {
+//  const getName isVip
+    private static final String preGet = "get";
+    private static final String preIs = "is";
 
-    public AvoidComplexConditionRule() {
-        setXPath(XPATH);
+    @Override
+    public Object visit(ASTIfStatement node, Object data) {
+        // Check the condition expression of the if statement
+        checkComplexCondition(node.getCondition(), data);
+        return super.visit(node, data);
     }
 
     @Override
-    public void addViolation(Object data, Node node, String arg) {
-        ViolationUtils.addViolationWithPrecisePosition(this, node, data,
-            "java.flowcontrol.AvoidComplexConditionRule.violation.msg");
+    public Object visit(ASTConditionalExpression node, Object data) {
+        // Check the condition of the ternary expression
+        checkComplexCondition(node.getCondition(), data);
+        return super.visit(node, data);
+    }
+
+    private void checkComplexCondition(ASTExpression condition, Object data) {
+        // contains && or ||
+        List<ASTInfixExpression> infixExpressionList = condition.descendants(ASTInfixExpression.class).toList();
+        long infixExpressCount = infixExpressionList.stream().filter(item -> BinaryOp.CONDITIONAL_OPS.contains(item.getOperator())
+                || BinaryOp.COMPARISON_OPS.contains(item.getOperator())
+                || BinaryOp.EQUALITY_OPS.contains(item.getOperator())).count();
+
+
+        // maybe contains getName isVip
+        List<ASTMethodCall> methodCallList = condition.descendants(ASTMethodCall.class).toList();
+        boolean anyMatch = methodCallList.stream().anyMatch(item -> item.getMethodName().contains(preGet) ||
+                item.getMethodName().contains(preIs));
+        // three is the minimum number of conditions
+        if (infixExpressCount > 3 && anyMatch) {
+            ViolationUtils.addViolationWithPrecisePosition(this, condition, data,
+                    I18nResources.getMessage("java.flowcontrol.AvoidComplexConditionRule.violation.msg"));
+        }
     }
 }
